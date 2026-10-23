@@ -32,4 +32,4 @@ Sydney, NSW business run by Jess with Claude. ACTS handles the tech side for con
 
 ## Saving changes
 
-This folder is tracked with Git (since 23 October 2026). Save after each finished piece of work with a short note saying what changed. Big video and audio files stay out of Git (see `.gitignore`), so back them up separately.
+This folder is tracked with Git (since 23 October 2026). Save after each finished piece of work with a short note saying what changed, then upload it (`git push`) to the private GitHub repository `jdelsrv-hub/ACTS-Design`, the off-computer backup. Big video and audio files stay out of Git (see `.gitignore`), so back them up separately.
