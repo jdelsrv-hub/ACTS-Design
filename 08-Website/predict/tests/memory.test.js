@@ -25,11 +25,12 @@ test('pin offered once at third use', () => {
 });
 test('display casing', () => {
   const m = createMemory(); m.commit('The bus. I saw Maria and maria', T); m.commit('ok Maria', T);
-  eq(m.display('i'), 'I'); eq(m.display('maria'), 'Maria'); eq(m.display('the'), 'the');
+  m.commit("ok i'm here", T);
+  eq(m.display('i'), 'I'); eq(m.display("i'm"), "I'm"); eq(m.display('maria'), 'Maria'); eq(m.display('the'), 'the');
 });
 test('recent keeps 20, newest first, no duplicates', () => {
   const m = createMemory(); for (let i = 0; i < 25; i++) m.commit('line ' + 'abcdefghijklmnopqrstuvwxy'[i], T); m.commit('line y', T);
-  eq(m.recent().length, 20); eq(m.recent()[0], 'line y');
+  eq(m.recent().length, 20); eq(m.recent()[0], 'line y'); eq(m.recent()[1], 'line x');
 });
 test('starter words are known and keep their casing', () => {
   const m = createMemory(); m.addStarterWords(['Maria', 'bus']); eq(m.knownWords().sort(), ['bus', 'maria']); eq(m.display('maria'), 'Maria');

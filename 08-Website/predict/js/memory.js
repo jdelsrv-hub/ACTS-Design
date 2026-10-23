@@ -88,7 +88,7 @@ export function createMemory(snapshot) {
 
     knownWords: () => Object.keys(s.words).filter(k => s.words[k].count >= 2),
 
-    display: key => key === 'i' ? 'I' : s.words[key]?.display ?? key,
+    display: key => key === 'i' || key.startsWith("i'") ? 'I' + key.slice(1) : s.words[key]?.display ?? key,
 
     addStarterWords(words) {
       for (const w of words) {
