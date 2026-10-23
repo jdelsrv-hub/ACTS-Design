@@ -5,9 +5,15 @@ import { tokenize } from './text.js';
 export const HALF_LIFE_MS = 30 * 864e5;
 
 export function createMemory(snapshot) {
-  const s = { version: 1, slips: {}, blocked: [], penalties: {}, recent: [], committedWords: 0, ...snapshot };
+  // shortcut: no size caps, add pruning if memory ever slows start-up
+  const s = { version: 1, blocked: [], recent: [], pins: [], committedWords: 0, ...snapshot };
   // No prototype, so typed words like "constructor" or "__proto__" are plain keys.
-  for (const t of ['words', 'ngrams', 'phrases']) s[t] = Object.assign(Object.create(null), snapshot?.[t]);
+  const table = from => Object.assign(Object.create(null), from);
+  for (const t of ['words', 'ngrams', 'phrases', 'penalties']) s[t] = table(snapshot?.[t]);
+  s.slips = table();
+  for (const typed in snapshot?.slips) s.slips[typed] = table(snapshot.slips[typed]);
+  s.blocked = [...s.blocked];
+  s.pins = [...s.pins];
 
   let paused = false;
   let totalCache = null;
@@ -35,14 +41,20 @@ export function createMemory(snapshot) {
     return totalCache.sum;
   };
 
-  Object.keys(s.ngrams).forEach(index);
+  const reindex = () => {
+    next.clear();
+    Object.keys(s.ngrams).forEach(index);
+  };
+
+  reindex();
 
   function score(context, word, now = Date.now()) {
     const b = context.at(-1), a = context.at(-2);
     const gram = key => decayed(s.ngrams[key], now);
     const tri = a === undefined ? 0 : ratio(gram(`${a} ${b} ${word}`), gram(`${a} ${b}`));
     const bi = b === undefined ? 0 : ratio(gram(`${b} ${word}`), decayed(s.words[b], now));
-    return 0.6 * tri + 0.3 * bi + 0.1 * ratio(decayed(s.words[word], now), total(now));
+    const penalty = 0.5 ** (s.penalties[`${b} ${word}`] ?? 0);
+    return (0.6 * tri + 0.3 * bi + 0.1 * ratio(decayed(s.words[word], now), total(now))) * penalty;
   }
 
   return {
@@ -64,12 +76,12 @@ export function createMemory(snapshot) {
       }
       totalCache = null;
       const phrase = text.trim();
-      const p = s.phrases[phrase] ??= { count: 0, lastUsed: now, pinned: false, offered: false };
+      const p = s.phrases[phrase] ??= { count: 0, lastUsed: now, offered: false };
       p.count++;
       p.lastUsed = now;
       s.recent = [phrase, ...s.recent.filter(r => r !== phrase)].slice(0, 20);
       s.committedWords += tokens.length;
-      const offer = p.count >= 3 && !p.pinned && !p.offered;
+      const offer = p.count >= 3 && !s.pins.includes(phrase) && !p.offered;
       if (offer) p.offered = true;
       return { offerPin: offer ? phrase : null };
     },
@@ -99,6 +111,61 @@ export function createMemory(snapshot) {
         e.display = t.word;
       }
       totalCache = null;
+    },
+
+    recordSlip(typed, chosen) {
+      const row = s.slips[typed] ??= Object.create(null);
+      row[chosen] = (row[chosen] ?? 0) + 1;
+    },
+
+    slipsFor: typed => Object.entries(s.slips[typed] ?? {}).map(([word, count]) => ({ word, count })).sort((x, y) => y.count - x.count),
+
+    penalize(prev, word) {
+      const key = `${prev} ${word}`;
+      s.penalties[key] = (s.penalties[key] ?? 0) + 1;
+    },
+
+    block(word) {
+      if (!s.blocked.includes(word)) s.blocked.push(word);
+    },
+    isBlocked: word => s.blocked.includes(word),
+    unblock(word) {
+      s.blocked = s.blocked.filter(w => w !== word);
+    },
+
+    deleteWord(key) {
+      delete s.words[key];
+      for (const gram of Object.keys(s.ngrams)) if (gram.split(' ').includes(key)) delete s.ngrams[gram];
+      totalCache = null;
+      reindex();
+    },
+
+    deletePhrase(text) {
+      delete s.phrases[text];
+      s.pins = s.pins.filter(p => p !== text);
+      s.recent = s.recent.filter(r => r !== text);
+    },
+
+    pinPhrase(text) {
+      s.phrases[text] ??= { count: 0, lastUsed: Date.now(), offered: false };
+      if (!s.pins.includes(text)) s.pins.push(text);
+    },
+    unpinPhrase(text) {
+      s.pins = s.pins.filter(p => p !== text);
+    },
+    pinned: () => [...s.pins],
+
+    phrases: () => Object.entries(s.phrases).map(([text, e]) => ({ text, count: e.count, pinned: s.pins.includes(text) })).sort((x, y) => y.count - x.count),
+    words: () => Object.entries(s.words).map(([key, e]) => ({ key, display: e.display ?? key, count: e.count })).sort((x, y) => y.count - x.count),
+
+    clearLearned() {
+      for (const t of ['words', 'ngrams', 'phrases', 'slips', 'penalties']) s[t] = table();
+      s.blocked = [];
+      s.recent = [];
+      s.pins = [];
+      s.committedWords = 0;
+      totalCache = null;
+      reindex();
     },
 
     get paused() { return paused; },
