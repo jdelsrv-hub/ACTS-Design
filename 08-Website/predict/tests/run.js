@@ -1,7 +1,7 @@
 import { tests } from './harness.js';
 
 // Later tasks append their spec files here.
-const SPECS = ['./text.test.js', './wordlist.test.js'];
+const SPECS = ['./text.test.js', './wordlist.test.js', './memory.test.js'];
 
 const results = [];
 
