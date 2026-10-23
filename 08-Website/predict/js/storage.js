@@ -16,9 +16,11 @@ export function openStore(idb = globalThis.indexedDB, name = 'acts-predict') {
     req.onsuccess = () => {
       const db = req.result;
       const run = (mode, op) => new Promise((ok, fail) => {
-        const r = op(db.transaction('kv', mode).objectStore('kv'));
-        r.onsuccess = () => ok(r.result);
-        r.onerror = () => fail(r.error);
+        // Settle on the transaction, not the request: a write can still fail at commit (e.g. quota).
+        const t = db.transaction('kv', mode);
+        const r = op(t.objectStore('kv'));
+        t.oncomplete = () => ok(r.result);
+        t.onabort = () => fail(t.error || r.error);
       });
       resolve({
         get: key => run('readonly', s => s.get(key)),
