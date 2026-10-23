@@ -29,3 +29,7 @@ Sydney, NSW business run by Jess with Claude. ACTS handles the tech side for con
 ## File naming
 
 `YYYY-MM-DD Short description.ext`, e.g. `2026-10-19 Creator feedback - Sam.md`. Keep text files as Markdown (`.md`) so any Claude agent can read them.
+
+## Saving changes
+
+This folder is tracked with Git (since 23 October 2026). Save after each finished piece of work with a short note saying what changed. Big video and audio files stay out of Git (see `.gitignore`), so back them up separately.
