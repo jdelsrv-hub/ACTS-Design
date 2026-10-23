@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "acts-tools",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["08-Website/tools/dev_server.py", "8787"],
+      "port": 8787
+    },
+    {
+      "name": "acts-site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8788", "--bind", "127.0.0.1", "--directory", "08-Website/site"],
+      "port": 8788
+    }
+  ]
+}

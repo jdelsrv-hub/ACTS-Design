@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>acTS Tools tests</title>
+<!-- dev_server.py listens on 127.0.0.1 only, so every request to "localhost" waits ~300 ms for the IPv6 attempt
+     to give up. Same server, about 4x faster runs. -->
+<script>if (location.hostname === 'localhost') location.replace(location.href.replace('//localhost', '//127.0.0.1'));</script>
+<link rel="icon" href="../public/assets/img/favicon.svg" type="image/svg+xml">
+<!-- Copied from public/index.html so Mediabunny loads the same way here. run.js warns if the two drift apart. -->
+<script type="importmap">{"imports":{"mediabunny":"https://cdn.jsdelivr.net/npm/mediabunny@1.61.6/dist/bundles/mediabunny.min.mjs","@mediabunny/mp3-encoder":"https://cdn.jsdelivr.net/npm/@mediabunny/mp3-encoder@1.61.6/dist/bundles/mediabunny-mp3-encoder.min.mjs"}}</script>
+<style>
+  :root { color-scheme: light dark; --pass: #1a7f37; --fail: #d32f2f; --muted: #7a768c; --line: #8884; --warn: #c88a00; }
+  body { font: 14px/1.45 system-ui, sans-serif; max-width: 1180px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 28px 0 6px; }
+  code { font: 12px ui-monospace, monospace; }
+  .muted { color: var(--muted); }
+  .banner { margin: 8px 0; padding: 8px 12px; border-left: 4px solid var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; vertical-align: top; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  td:last-child { font: 12px/1.4 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .st { font-weight: 600; }
+  .st.pass { color: var(--pass); }
+  .st.fail { color: var(--fail); }
+  .st.skip, .st.running { color: var(--muted); font-weight: 400; }
+  #stage iframe { width: 1024px; max-width: 100%; height: 640px; border: 1px solid var(--line); }
+</style>
+<script type="module" src="run.js"></script>
+</head>
+<body>
+<h1>acTS Tools tests</h1>
+<p id="status">Starting</p>
+<p class="muted">Options: <code>?only=merge-pdf,image</code> (slugs or families) · <code>?fixtures=0</code> · <code>?smoke=0</code> · <code>?func=0</code> · <a href="">Run again</a></p>
+<div id="banners"></div>
+<table id="summary" hidden><thead><tr><th>Family</th><th>Smoke</th><th>Function</th></tr></thead><tbody></tbody></table>
+<h2>Fixtures</h2>
+<table id="fixtures"><thead><tr><th>File</th><th>Valid</th><th>Time</th><th>Details</th></tr></thead><tbody></tbody></table>
+<h2>Tools</h2>
+<table id="results"><thead><tr><th>Family</th><th>Tool</th><th>Smoke</th><th>Function</th><th>Time</th><th>Details</th></tr></thead><tbody></tbody></table>
+<h2>Tool page being smoke-tested</h2>
+<div id="stage"></div>
+</body>
+</html>

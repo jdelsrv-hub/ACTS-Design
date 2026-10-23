@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>acTS · You create. We sort the tech.</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="All Creative Technology Solutions (acTS) handles the tech side of content creation. Streaming setups, clipping and online safety for creators. Sydney based, helping creators anywhere.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Layout: dark "studio" page. Gradient hero with a stream-dashboard card, then calm sections on Night, one green call to action per screen. */
+  :root {
+    --night: #16112A;
+    --night-2: #1E1738;
+    --card: #221A3D;
+    --line: #34295C;
+    --purple: #6C3FE0;
+    --green: #2FD47F;
+    --lilac: #CBBDF7;
+    --white: #FFFFFF;
+    --font-display: "Space Grotesk", Arial, sans-serif;
+    --font-body: Inter, Arial, sans-serif;
+    --font-mono: "JetBrains Mono", Consolas, monospace;
+    --radius: 12px;
+    --max: 1080px;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+  body { margin: 0; background: var(--night); color: var(--white); font-family: var(--font-body); font-size: 17px; line-height: 1.55; }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(38px, 6vw, 60px); font-weight: 700; }
+  h2 { font-size: clamp(28px, 4vw, 36px); font-weight: 700; }
+  h3 { font-size: 21px; font-weight: 700; }
+  p { margin: 0; }
+  a { color: var(--lilac); }
+  a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--lilac); outline-offset: 3px; }
+
+  .wrap { max-width: var(--max); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .section { padding-block: 80px; scroll-margin-top: 40px; }
+  .section-head { display: grid; gap: 12px; max-width: 640px; margin-bottom: 40px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lilac); }
+  .lead { color: var(--lilac); font-size: 18px; }
+
+  .wordmark { font-family: var(--font-display); letter-spacing: -0.02em; line-height: 1; text-decoration: none; font-size: 30px; }
+  .wordmark .ac { font-weight: 500; color: var(--lilac); }
+  .wordmark .ts { font-weight: 700; color: var(--green); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 22px; border-radius: var(--radius); font-family: var(--font-body); font-weight: 600; font-size: 16px; text-decoration: none; border: 0; cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  .btn-green { background: var(--green); color: var(--night); }
+  .btn-purple { background: var(--purple); color: var(--white); }
+  .btn-ghost { background: transparent; color: var(--white); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .btn-ghost:hover { box-shadow: inset 0 0 0 1.5px var(--lilac); }
+
+  /* Header */
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--night); }
+  .site-header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: rgba(22, 17, 42, .88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+  .nav { display: flex; align-items: center; gap: 28px; }
+  .nav-links { display: flex; align-items: center; gap: 28px; margin: 0; padding: 0; list-style: none; }
+  .nav a { color: var(--white); text-decoration: none; font-size: 15px; }
+  .nav a:hover { color: var(--lilac); }
+  .header-cta { padding: 10px 16px; font-size: 15px; }
+  .menu-btn { display: none; align-items: center; gap: 6px; min-height: 42px; padding: 0 12px; border: 0; border-radius: var(--radius); background: transparent; color: var(--white); box-shadow: inset 0 0 0 1.5px var(--line); font: 600 15px var(--font-body); cursor: pointer; }
+  .menu-btn:hover { box-shadow: inset 0 0 0 1.5px var(--lilac); }
+  .menu-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .menu-btn .icon-close, .menu-btn[aria-expanded="true"] .icon-open { display: none; }
+  .menu-btn[aria-expanded="true"] .icon-close { display: block; }
+
+  /* Hero */
+  .hero { background: linear-gradient(140deg, var(--purple) 0%, #3A2585 30%, var(--night) 72%); }
+  .hero .wrap { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: center; padding-block: 88px 96px; }
+  .hero-copy { display: grid; gap: 22px; min-width: 0; }
+  .hero h1 .soft { color: var(--lilac); }
+  .hero .lead { color: var(--white); opacity: .9; max-width: 34ch; font-size: 19px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; justify-self: start; background: rgba(203, 189, 247, .14); color: var(--lilac); border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(47, 212, 127, .6); animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47, 212, 127, .55); } 70% { box-shadow: 0 0 0 8px rgba(47, 212, 127, 0); } 100% { box-shadow: 0 0 0 0 rgba(47, 212, 127, 0); } }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .reassure { font-size: 14px; color: var(--lilac); }
+
+  /* Stream dashboard card */
+  .console { background: rgba(22, 17, 42, .82); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 14px; min-width: 0; box-shadow: 0 24px 60px rgba(8, 5, 20, .45); }
+  .console-bar { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--lilac); }
+  .live { display: inline-flex; align-items: center; gap: 6px; color: var(--white); font-weight: 600; }
+  .screen { aspect-ratio: 16 / 9; max-width: 100%; border-radius: 10px; background: radial-gradient(circle at 30% 35%, rgba(108, 63, 224, .55), transparent 55%), radial-gradient(circle at 75% 70%, rgba(47, 212, 127, .18), transparent 50%), var(--night-2); position: relative; overflow: hidden; display: grid; place-items: center; }
+  .screen-label { font-family: var(--font-display); font-weight: 700; font-size: clamp(18px, 2.4vw, 24px); text-align: center; padding: 0 16px; }
+  .screen-label span { color: var(--lilac); font-weight: 500; }
+  .facecam { position: absolute; right: 10px; bottom: 10px; width: 26%; aspect-ratio: 4 / 3; border-radius: 8px; background: linear-gradient(160deg, #3A2585, var(--night)); border: 1.5px solid var(--lilac); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: var(--night-2); border-radius: 8px; padding: 10px; min-width: 0; }
+  .stat dt { font-size: 11px; color: var(--lilac); text-transform: uppercase; letter-spacing: .06em; }
+  .stat dd { margin: 2px 0 0; font-family: var(--font-mono); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meter { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--lilac); }
+  .meter-track { height: 8px; border-radius: 999px; background: var(--night-2); overflow: hidden; }
+  .meter-fill { height: 100%; width: 68%; border-radius: inherit; background: linear-gradient(90deg, var(--lilac), var(--purple)); animation: level 1.6s ease-in-out infinite alternate; }
+  @keyframes level { from { width: 58%; } to { width: 74%; } }
+
+  /* Services */
+  .services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .service { background: var(--card); border-radius: var(--radius); padding: 28px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+  .icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(203, 189, 247, .12); display: grid; place-items: center; }
+  .icon svg { width: 24px; height: 24px; stroke: var(--lilac); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .service p { color: var(--lilac); }
+  .service ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 15px; }
+  .service li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; }
+  .service li::before { content: ""; width: 8px; height: 8px; margin-top: 8px; border-radius: 50%; background: var(--lilac); }
+  .later { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 18px 22px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--lilac); font-size: 15px; }
+  .tag { display: inline-block; border-radius: 999px; padding: 4px 12px; font-size: 13px; background: rgba(203, 189, 247, .14); color: var(--lilac); }
+
+  /* How it works */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+  .step { counter-increment: step; display: grid; gap: 10px; padding-top: 22px; border-top: 2px solid var(--line); min-width: 0; }
+  .step::before { content: "Step " counter(step); font-family: var(--font-mono); font-size: 13px; color: var(--lilac); letter-spacing: .06em; text-transform: uppercase; }
+  .step p { color: var(--lilac); }
+  .alt { background: var(--night-2); }
+
+  /* About */
+  .about { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .about-copy { display: grid; gap: 18px; min-width: 0; }
+  .about-copy p { color: var(--lilac); }
+  .about-copy p.strong { color: var(--white); font-size: 19px; }
+  .promise { background: var(--card); border-radius: var(--radius); padding: 28px; display: grid; gap: 18px; }
+  .promise ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; }
+  .promise li { display: grid; gap: 4px; }
+  .promise li b { font-family: var(--font-display); font-size: 18px; }
+  .promise li span { color: var(--lilac); font-size: 15px; }
+  .placeholder { border: 1px dashed var(--lilac); border-radius: 8px; padding: 10px 14px; color: var(--lilac); font-size: 14px; }
+
+  /* Portfolio */
+  .portfolio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .slot { aspect-ratio: 4 / 3; max-width: 100%; border-radius: var(--radius); border: 1.5px dashed var(--line); display: grid; place-items: center; text-align: center; padding: 16px; color: var(--lilac); font-size: 15px; }
+
+  /* FAQ */
+  .faq { display: grid; gap: 12px; max-width: 760px; }
+  .faq details { background: var(--card); border-radius: var(--radius); padding: 0 22px; }
+  .faq summary { cursor: pointer; list-style: none; padding: 18px 0; font-family: var(--font-display); font-weight: 500; font-size: 18px; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; color: var(--lilac); font-family: var(--font-mono); }
+  .faq details[open] summary::after { content: "–"; }
+  .faq details p { color: var(--lilac); padding-bottom: 20px; }
+
+  /* Contact */
+  .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .panel { background: var(--card); border-radius: var(--radius); padding: 32px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+  .panel p { color: var(--lilac); }
+  .book { background: linear-gradient(150deg, #3A2585, var(--card) 70%); }
+  form { display: grid; gap: 14px; }
+  label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+  input, select, textarea { width: 100%; font: inherit; font-size: 16px; color: var(--white); background: var(--night); border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 13px; }
+  input::placeholder, textarea::placeholder { color: #8E84B5; }
+  textarea { min-height: 110px; resize: vertical; }
+  .form-note { font-size: 14px; color: var(--lilac); }
+  .form-done { background: rgba(47, 212, 127, .12); border-radius: 10px; padding: 14px 16px; color: var(--white); font-size: 15px; }
+
+  /* Footer */
+  .site-footer { border-top: 1px solid var(--line); }
+  .site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; padding-block: 40px; color: var(--lilac); font-size: 14px; }
+  .footer-brand { display: grid; gap: 8px; }
+  .footer-links { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: start; }
+  .footer-links a { color: var(--lilac); }
+
+  @media (max-width: 880px) {
+    .hero .wrap, .about, .contact { grid-template-columns: 1fr; }
+    .services, .steps, .portfolio { grid-template-columns: 1fr; }
+    /* Phone menu: the links drop down under the header from the Menu button */
+    .nav { gap: 10px; }
+    .menu-btn { display: inline-flex; }
+    .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; max-height: calc(100vh - 80px); overflow-y: auto; background: var(--night-2); border-bottom: 1px solid var(--line); box-shadow: 0 24px 40px rgba(8, 5, 20, .5); padding-block: 4px 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    .nav-links.open { display: flex; }
+    .nav-links li + li { border-top: 1px solid var(--line); }
+    .nav-links a { display: block; padding: 16px 4px; font-family: var(--font-display); font-size: 19px; font-weight: 500; }
+    .slot { aspect-ratio: auto; min-height: 120px; }
+    .section { padding-block: 64px; }
+    .hero .wrap { padding-block: 56px 64px; gap: 36px; }
+  }
+  @media (max-width: 420px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat:last-child { grid-column: 1 / -1; }
+    .panel, .service, .promise { padding: 22px; }
+  }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="wordmark" href="#top" aria-label="acTS home"><span class="ac">ac</span><span class="ts">TS</span></a>
+    <nav class="nav" aria-label="Main">
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#about">About us</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#contact">Contact us</a></li>
+      </ul>
+      <a class="btn btn-purple header-cta" href="#contact">Book a chat</a>
+      <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="nav-links">
+        <svg class="icon-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        Menu
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="pill"><span class="dot" aria-hidden="true"></span>Now booking creators</span>
+        <h1>You create.<br><span class="soft">We sort the tech.</span></h1>
+        <p class="lead">All Creative Technology Solutions (acTS) handles the tech side of content creation. Setups, clips and online safety for creators, so you can stay on the creative side.</p>
+        <div class="actions">
+          <a class="btn btn-green" href="#contact">Book a free 15-minute chat</a>
+          <a class="btn btn-ghost" href="#services">See what's included</a>
+        </div>
+        <p class="reassure">Sydney based, helping creators anywhere. No pressure to commit.</p>
+      </div>
+
+      <div class="console" aria-label="Example of a stream setup we'd build">
+        <div class="console-bar">
+          <span class="live"><span class="dot" aria-hidden="true"></span>LIVE 01:42:09</span>
+          <span>Scene: Just chatting</span>
+        </div>
+        <div class="screen">
+          <p class="screen-label">Your stream, <span>sorted</span></p>
+          <div class="facecam" aria-hidden="true"></div>
+        </div>
+        <dl class="stats">
+          <div class="stat"><dt>Bitrate</dt><dd>6000 kbps</dd></div>
+          <div class="stat"><dt>Encoder</dt><dd>NVENC</dd></div>
+          <div class="stat"><dt>Dropped</dt><dd>0 frames</dd></div>
+        </dl>
+        <div class="meter"><span>MIC</span><div class="meter-track"><div class="meter-fill"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="services">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">What we do</span>
+        <h2>The fiddly tech, handled</h2>
+        <p class="lead">Three ways we can help right now. Every job starts with a free chat, so we only recommend what's actually worth it for you.</p>
+      </div>
+      <div class="services">
+        <article class="service">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/><path d="M8 22h8"/></svg></div>
+          <h3>Starter setups</h3>
+          <p>New to streaming? We'll build you a setup that looks and sounds great without blowing your budget.</p>
+          <ul>
+            <li>A parts list matched to your goals and budget</li>
+            <li>A setup session, in person around Sydney or online</li>
+            <li>Help when you go live for the first time</li>
+          </ul>
+        </article>
+        <article class="service">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9"/><path d="M14.5 14.5 20 20"/><path d="M8.1 8.1 12 12"/></svg></div>
+          <h3>Clipping</h3>
+          <p>Turn your long videos and podcasts into short clips that people actually watch.</p>
+          <ul>
+            <li>We find your best moments</li>
+            <li>Captions added and sized for each app</li>
+            <li>Ready to post to TikTok, Reels and Shorts</li>
+          </ul>
+        </article>
+        <article class="service">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <h3>Safety and security packs</h3>
+          <p>Keep your accounts, your footage and your privacy safe, with easy guides you can follow in an afternoon.</p>
+          <ul>
+            <li>Strong passwords and two-step login</li>
+            <li>Spotting scam DMs and fake brand deals</li>
+            <li>Keeping your location private on stream</li>
+          </ul>
+        </article>
+      </div>
+      <div class="later">
+        <span class="tag">Coming soon</span>
+        <span>Ads for creators and monthly content analytics. Ask us about them in your chat.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">How it works</span>
+        <h2>Chat, plan, sorted</h2>
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <h3>Have a free chat</h3>
+          <p>Book 15 minutes. Tell us what you make, where you post and what's getting in the way.</p>
+        </li>
+        <li class="step">
+          <h3>Get a clear plan</h3>
+          <p>We send back what we'd do, what it costs and what's worth buying. No hidden catches.</p>
+        </li>
+        <li class="step">
+          <h3>We sort it</h3>
+          <p>We set it up, clip it or lock it down, then stick around in case anything plays up.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="wrap about">
+      <div class="about-copy">
+        <span class="eyebrow">About us</span>
+        <h2>A small Sydney studio that speaks creator</h2>
+        <p class="strong">We started acTS because we kept seeing the same thing: creators with great ideas getting stuck on gear, settings and software.</p>
+        <p>We've spent years streaming and making content, and we know how much time the tech side can eat up. So we take care of it. We'll help you pick the right gear for your budget, set it all up, clip your best moments and keep your accounts safe.</p>
+        <p class="placeholder">Jess to add: a short personal line, years of experience and a favourite piece of gear.</p>
+      </div>
+      <aside class="promise" aria-label="Our promise">
+        <h3>What you can count on</h3>
+        <ul>
+          <li><b>Supported and heard</b><span>We listen first, then explain things in plain words.</span></li>
+          <li><b>Straight talk</b><span>Honest recommendations and clear prices before we start.</span></li>
+          <li><b>Safety by default</b><span>We treat your accounts and footage like they're our own.</span></li>
+          <li><b>Always a next step</b><span>If something's outside what we do, we'll find who can help.</span></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section alt" id="work">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Our work</span>
+        <h2>Portfolio coming soon</h2>
+        <p class="lead">We're working with our first creators now. Setups and clips will show up here once they've given us the OK.</p>
+      </div>
+      <div class="portfolio">
+        <div class="slot">Setup before and after</div>
+        <div class="slot">Podcast clip</div>
+        <div class="slot">Creator quote</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">FAQ</span>
+        <h2>Questions creators ask us</h2>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>How much does it cost?</summary>
+          <p>Every creator's goals and budget are different, so we start with a free 15-minute chat. After that we send a clear quote in AUD before any work starts.</p>
+        </details>
+        <details>
+          <summary>Do I need to be in Sydney?</summary>
+          <p>No. We're based in Sydney and do most work online, over video calls and screen sharing. In-person setups are available around Sydney.</p>
+        </details>
+        <details>
+          <summary>I'm brand new to streaming. Is that ok?</summary>
+          <p>Yes, heaps of the creators we help are just starting out. We'll explain each step as we go, with no jargon and no silly questions.</p>
+        </details>
+        <details>
+          <summary>Which platforms do you work with?</summary>
+          <p>TikTok, Twitch, YouTube, Instagram and podcasts. If you're somewhere else, ask us anyway.</p>
+        </details>
+        <details>
+          <summary>What if you can't help with my problem?</summary>
+          <p>We'll tell you straight away and point you to someone who's great at it. You won't be left stuck.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="contact">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Get in touch</span>
+        <h2>Let's get your tech sorted</h2>
+      </div>
+      <div class="contact">
+        <div class="panel book">
+          <h3>Book a free 15-minute chat</h3>
+          <p>Pick a time that suits you. We'll ask what you make and what's in the way, then tell you exactly what we'd do.</p>
+          <a class="btn btn-green" href="#contact" id="book-link">Choose a time</a>
+          <p class="form-note">Booking calendar connects here at launch (Cal.com or Calendly).</p>
+        </div>
+        <div class="panel">
+          <h3>Or send us a message</h3>
+          <form id="contact-form" novalidate>
+            <label for="f-name">Your name<input id="f-name" name="name" type="text" autocomplete="name" placeholder="Alex" required></label>
+            <label for="f-email">Email<input id="f-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+            <label for="f-help">What can we help with?
+              <select id="f-help" name="help">
+                <option>A streaming setup</option>
+                <option>Clipping my videos</option>
+                <option>Online safety</option>
+                <option>Something else</option>
+              </select>
+            </label>
+            <label for="f-msg">Tell us a bit more<textarea id="f-msg" name="message" placeholder="I post on TikTok and want to start streaming..."></textarea></label>
+            <button class="btn btn-purple" type="submit">Send message</button>
+            <p class="form-done" id="form-done" hidden>Thanks. This is a preview, so nothing was sent. At launch this form goes straight to our inbox.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-brand">
+      <a class="wordmark" href="#top" aria-label="acTS home"><span class="ac">ac</span><span class="ts">TS</span></a>
+      <span>All Creative Technology Solutions · Sydney, NSW</span>
+      <span>ABN 51 266 261 094 · hello@ email to come</span>
+    </div>
+    <div class="footer-links">
+      <a href="#faq">FAQ</a>
+      <a href="#contact">Contact us</a>
+      <a href="privacy.html">Privacy policy</a>
+      <a href="terms.html">Terms</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('contact-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    document.getElementById('form-done').hidden = false;
+  });
+
+  // Phone menu: open and close from the Menu button; close on a link tap, Escape, a tap outside or a wider screen.
+  (function () {
+    var btn = document.getElementById('menu-btn');
+    var links = document.getElementById('nav-links');
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      links.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function () { setOpen(btn.getAttribute('aria-expanded') !== 'true'); });
+    document.querySelector('.nav').addEventListener('click', function (e) { if (e.target.closest('a')) setOpen(false); });
+    document.addEventListener('click', function (e) { if (!e.target.closest('.site-header')) setOpen(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && btn.getAttribute('aria-expanded') === 'true') { setOpen(false); btn.focus(); }
+    });
+    window.matchMedia('(min-width: 881px)').addEventListener('change', function (m) { if (m.matches) setOpen(false); });
+  })();
+
+  // In-page links scroll by script, so they still work in previews that block jumping to #anchors.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    var target = a && document.getElementById(a.getAttribute('href').slice(1));
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView();
+    if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+    target.focus({ preventScroll: true });
+    try { history.pushState(null, '', a.getAttribute('href')); } catch (err) { /* address stays as is */ }
+  });
+</script>
+</body>
+</html>

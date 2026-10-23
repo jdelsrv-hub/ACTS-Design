@@ -1,0 +1,3 @@
+This folder is part of the ACTS workspace. See README.md at the top of the ACTS folder.
+
+Drop money exports here: store sales (Lemon Squeezy, Gumroad), AdSense reports, affiliate dashboards, bank CSVs and invoices. empire-tracker adds them to ../ledger.csv and moves them to done/.

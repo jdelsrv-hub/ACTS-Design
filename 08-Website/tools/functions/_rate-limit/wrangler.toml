@@ -1,0 +1,17 @@
+# Private Worker that rate-limits the AI writing tools (see worker.js and functions/api/ai.js).
+# Deploy from 08-Website/tools:  npx wrangler deploy --config functions/_rate-limit/wrangler.toml
+name = "acts-tools-ai-rate-limit"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = false   # no public URL: only the Pages project's service binding can call it
+preview_urls = false
+
+# Cloudflare Rate Limiting binding (needs Wrangler 4.36.0 or later). period must be 10 or 60 seconds.
+# namespace_id is any positive whole number, written as a string, unique within the Cloudflare account.
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1101"
+
+  [ratelimits.simple]
+  limit = 5     # AI requests per visitor (IP address)
+  period = 60   # seconds

@@ -1,0 +1,15 @@
+# Cloudflare Pages config for acTS Tools (08-Website/tools). The site is public/; functions/ holds the
+# AI writing service (functions/api/ai.js). Setup steps are in the header of functions/api/ai.js.
+name = "acts-tools"                 # must match the Pages project name
+pages_build_output_dir = "./public"
+compatibility_date = "2026-09-01"
+
+# Rate limiter for /api/ai. Pages Functions can't use the Rate Limiting binding directly, so it lives in a
+# small private Worker (functions/_rate-limit/) that this service binding calls. Deploy that Worker first.
+# Without it, /api/ai refuses every request.
+[[services]]
+binding = "AI_RATE_LIMITER"
+service = "acts-tools-ai-rate-limit"
+
+# The Claude API key is NOT set here. It's an encrypted secret named ANTHROPIC_API_KEY:
+#   npx wrangler pages secret put ANTHROPIC_API_KEY --project-name acts-tools

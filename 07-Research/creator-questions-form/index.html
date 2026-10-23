@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creator questions · acTS</title>
+<meta name="description" content="Help shape acTS: 14 quick questions about the tech side of creating.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #16112A; --purple: #6C3FE0; --green: #2FD47F; --lilac: #CBBDF7;
+    --mint: #DCF7E9; --deep-green: #0F7A4A; --ink: #1D1A2B; --slate: #5F5B73;
+    --paper: #F8F7FC; --white: #FFFFFF; --error: #B42318;
+    --head: "Space Grotesk", Arial, sans-serif; --body: Inter, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.5 var(--body); }
+  h1, h2, legend.q, .wordmark { font-family: var(--head); }
+  a { color: var(--purple); }
+
+  .hero { background: linear-gradient(135deg, var(--purple) 0%, var(--night) 70%); color: var(--white); padding: 32px 16px 40px; }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  .wordmark { font-size: 32px; letter-spacing: -0.02em; line-height: 1; }
+  .wordmark .ac { color: var(--lilac); font-weight: 500; }
+  .wordmark .ts { color: var(--green); font-weight: 700; }
+  .fullname { color: var(--lilac); font-size: 14px; margin-top: 4px; }
+  .hero h1 { font-size: clamp(30px, 7vw, 44px); line-height: 1.15; margin: 28px 0 12px; font-weight: 700; }
+  .hero p { margin: 0 0 8px; color: var(--white); max-width: 34em; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.12); color: var(--lilac); font-size: 14px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+  .progress { position: sticky; top: 0; z-index: 2; background: var(--paper); border-bottom: 1px solid #E6E3F0; padding: 10px 16px; }
+  .progress .wrap { display: flex; align-items: center; gap: 12px; }
+  .track { flex: 1; height: 8px; background: var(--lilac); border-radius: 999px; overflow: hidden; }
+  .fill { height: 100%; width: 0; background: var(--purple); border-radius: 999px; transition: width .3s ease; }
+  .count { font-size: 14px; color: var(--slate); white-space: nowrap; }
+
+  main { padding: 8px 16px 48px; }
+  .card { background: var(--white); border: 1px solid #E6E3F0; border-radius: 12px; padding: 24px; margin-top: 24px; }
+  .card h2 { font-size: 24px; line-height: 1.15; margin: 0 0 4px; }
+  .card .sub { color: var(--slate); margin: 0 0 8px; font-size: 15px; }
+  fieldset { border: 0; padding: 0; margin: 24px 0 0; min-width: 0; }
+  legend.q, label.q { display: block; font-weight: 600; font-size: 17px; margin-bottom: 10px; padding: 0; }
+  legend.q .n { color: var(--purple); margin-right: 4px; }
+  .hint { display: block; font-weight: 400; color: var(--slate); font-size: 14px; margin-top: 2px; }
+  .field { margin-top: 20px; }
+  .field:first-of-type { margin-top: 12px; }
+  input[type=text], input[type=email], textarea, select {
+    width: 100%; font: inherit; color: var(--ink); background: var(--white);
+    border: 1px solid #CFCBDD; border-radius: 12px; padding: 12px 14px;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, select:focus-visible, .opt input:focus-visible + span {
+    outline: 3px solid var(--purple); outline-offset: 2px;
+  }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opt { position: relative; }
+  .opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .opt span { display: inline-block; padding: 10px 16px; border: 1px solid #CFCBDD; border-radius: 999px; cursor: pointer; background: var(--white); font-size: 15px; }
+  .opt input:checked + span { background: var(--lilac); border-color: var(--purple); color: var(--ink); font-weight: 600; }
+  .sublabel { display: block; font-size: 15px; color: var(--slate); margin: 14px 0 8px; }
+  .req { color: var(--slate); font-weight: 400; font-size: 14px; }
+
+  .consent { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; font-size: 15px; }
+  .consent input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--purple); flex: none; }
+  .tip { background: var(--mint); border-radius: 12px; padding: 14px 16px; margin-top: 20px; font-size: 15px; }
+  .tip strong { color: var(--deep-green); }
+
+  .submit { display: block; width: 100%; margin-top: 24px; padding: 16px; border: 0; border-radius: 12px; background: var(--green); color: var(--night); font: 700 18px var(--head); cursor: pointer; }
+  .submit:disabled { opacity: .6; cursor: wait; }
+  .msg { margin-top: 12px; font-size: 15px; min-height: 1.5em; }
+  .msg.err { color: var(--error); }
+  .hp { display: none; }
+
+  .thanks { display: none; text-align: left; }
+  .thanks.show { display: block; }
+  .thanks h2 { font-size: 32px; }
+  footer { text-align: center; color: var(--slate); font-size: 13px; padding: 0 16px 32px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="wordmark" aria-label="acTS"><span class="ac">ac</span><span class="ts">TS</span></div>
+    <div class="fullname">All Creative Technology Solutions</div>
+    <h1>Help us shape acTS</h1>
+    <p>We're building tech help for creators: setups, clips and online safety. Your answers decide what we offer first and what it costs.</p>
+    <p>14 quick questions, about 10 minutes. Skip any you like.</p>
+    <span class="badge"><span class="dot" aria-hidden="true"></span>Creator questions</span>
+  </div>
+</header>
+
+<div class="progress" aria-hidden="true">
+  <div class="wrap">
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <span class="count" id="count">0 of 14 answered</span>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+    <form id="form" novalidate>
+
+      <section class="card" aria-labelledby="s0">
+        <h2 id="s0">First, who are you?</h2>
+        <div class="field">
+          <label class="q" for="name">Your name <span class="req">(required)</span></label>
+          <input type="text" id="name" name="Name" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label class="q" for="email">Your email <span class="req">(optional, so we can reply)</span></label>
+          <input type="email" id="email" name="email" autocomplete="email">
+        </div>
+        <div class="field">
+          <label class="q" for="handle">Your main channel or handle <span class="req">(optional)</span></label>
+          <input type="text" id="handle" name="Main channel or handle">
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="s1">
+        <h2 id="s1">About you</h2>
+        <fieldset data-q="1">
+          <legend class="q"><span class="n">1.</span>What platforms do you post on, and how often?</legend>
+          <div class="opts">
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="TikTok"><span>TikTok</span></label>
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="YouTube"><span>YouTube</span></label>
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="Twitch"><span>Twitch</span></label>
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="Instagram"><span>Instagram</span></label>
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="Kick"><span>Kick</span></label>
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="Facebook"><span>Facebook</span></label>
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="Podcast apps"><span>Podcast apps</span></label>
+            <label class="opt"><input type="checkbox" name="Q1 Platforms" value="Other"><span>Other</span></label>
+          </div>
+          <label class="sublabel" for="q1often">How often you post</label>
+          <select id="q1often" name="Q1 How often">
+            <option value="">Choose one</option>
+            <option>Every day</option>
+            <option>A few times a week</option>
+            <option>About once a week</option>
+            <option>A few times a month</option>
+            <option>Less often</option>
+          </select>
+        </fieldset>
+        <fieldset data-q="2">
+          <legend class="q"><span class="n">2.</span>Roughly how many followers or subscribers do you have on your main platform?</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q2 Followers" value="Under 1,000"><span>Under 1,000</span></label>
+            <label class="opt"><input type="radio" name="Q2 Followers" value="1,000 to 10,000"><span>1,000 to 10,000</span></label>
+            <label class="opt"><input type="radio" name="Q2 Followers" value="10,000 to 50,000"><span>10,000 to 50,000</span></label>
+            <label class="opt"><input type="radio" name="Q2 Followers" value="50,000 to 100,000"><span>50,000 to 100,000</span></label>
+            <label class="opt"><input type="radio" name="Q2 Followers" value="Over 100,000"><span>Over 100,000</span></label>
+          </div>
+        </fieldset>
+        <fieldset data-q="3">
+          <legend class="q"><span class="n">3.</span>Is creating content a hobby, a side income, or your main income?</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q3 Creating is" value="A hobby"><span>A hobby</span></label>
+            <label class="opt"><input type="radio" name="Q3 Creating is" value="A side income"><span>A side income</span></label>
+            <label class="opt"><input type="radio" name="Q3 Creating is" value="My main income"><span>My main income</span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card" aria-labelledby="s2">
+        <h2 id="s2">Where the tech gets in the way</h2>
+        <fieldset data-q="4">
+          <legend class="q"><span class="n">4.</span>Which part of making content takes the most time that isn't the creative part?</legend>
+          <textarea name="Q4 Biggest non-creative time sink" aria-label="Answer to question 4"></textarea>
+        </fieldset>
+        <fieldset data-q="5">
+          <legend class="q"><span class="n">5.</span>What tech problem has cost you a stream, an upload or a deal?</legend>
+          <textarea name="Q5 Tech problem that cost you" aria-label="Answer to question 5"></textarea>
+        </fieldset>
+        <fieldset data-q="6">
+          <legend class="q"><span class="n">6.</span>If someone took one task off your plate tomorrow, which would it be?</legend>
+          <textarea name="Q6 One task to hand off" aria-label="Answer to question 6"></textarea>
+        </fieldset>
+      </section>
+
+      <section class="card" aria-labelledby="s3">
+        <h2 id="s3">The services</h2>
+        <fieldset data-q="7">
+          <legend class="q"><span class="n">7.</span>Have you ever paid for gear advice, editing or clipping? What did it cost, and was it worth it?</legend>
+          <textarea name="Q7 Paid before" aria-label="Answer to question 7"></textarea>
+        </fieldset>
+        <fieldset data-q="8">
+          <legend class="q"><span class="n">8.</span>Would you pay for clips cut from your long videos every month?</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q8 Would pay for monthly clips" value="Yes"><span>Yes</span></label>
+            <label class="opt"><input type="radio" name="Q8 Would pay for monthly clips" value="Maybe"><span>Maybe</span></label>
+            <label class="opt"><input type="radio" name="Q8 Would pay for monthly clips" value="No"><span>No</span></label>
+          </div>
+          <label class="sublabel" for="q8clips">How many clips a week would be useful?</label>
+          <select id="q8clips" name="Q8 Clips a week">
+            <option value="">Choose one</option>
+            <option>1 or 2</option>
+            <option>3 to 5</option>
+            <option>6 to 10</option>
+            <option>More than 10</option>
+            <option>Not sure</option>
+          </select>
+        </fieldset>
+        <fieldset data-q="9">
+          <legend class="q"><span class="n">9.</span>Do you know how to protect your accounts from hackers, scams and doxxing?</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q9 Confident with account safety" value="Yes, I'm confident"><span>Yes, I'm confident</span></label>
+            <label class="opt"><input type="radio" name="Q9 Confident with account safety" value="Somewhat"><span>Somewhat</span></label>
+            <label class="opt"><input type="radio" name="Q9 Confident with account safety" value="Not really"><span>Not really</span></label>
+          </div>
+          <span class="sublabel">Would a short guide or a training session help?</span>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q9 What would help" value="A guide"><span>A guide</span></label>
+            <label class="opt"><input type="radio" name="Q9 What would help" value="A session"><span>A session</span></label>
+            <label class="opt"><input type="radio" name="Q9 What would help" value="Both"><span>Both</span></label>
+            <label class="opt"><input type="radio" name="Q9 What would help" value="Neither"><span>Neither</span></label>
+          </div>
+        </fieldset>
+        <fieldset data-q="10">
+          <legend class="q"><span class="n">10.</span>Have you ever made an ad, for yourself or a sponsor? Would you pay someone to make one?</legend>
+          <textarea name="Q10 Ads" aria-label="Answer to question 10"></textarea>
+        </fieldset>
+        <fieldset data-q="11">
+          <legend class="q"><span class="n">11.</span>Do you check your analytics? What would you want a monthly report to tell you?</legend>
+          <textarea name="Q11 Analytics" aria-label="Answer to question 11"></textarea>
+        </fieldset>
+      </section>
+
+      <section class="card" aria-labelledby="s4">
+        <h2 id="s4">Money and trust</h2>
+        <fieldset data-q="12">
+          <legend class="q"><span class="n">12.</span>What would you expect to pay per month for help with the tech side?<span class="hint">In Australian dollars</span></legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q12 Expected monthly spend" value="Nothing"><span>Nothing</span></label>
+            <label class="opt"><input type="radio" name="Q12 Expected monthly spend" value="Under $50"><span>Under $50</span></label>
+            <label class="opt"><input type="radio" name="Q12 Expected monthly spend" value="$50 to $100"><span>$50 to $100</span></label>
+            <label class="opt"><input type="radio" name="Q12 Expected monthly spend" value="$100 to $250"><span>$100 to $250</span></label>
+            <label class="opt"><input type="radio" name="Q12 Expected monthly spend" value="$250 to $500"><span>$250 to $500</span></label>
+            <label class="opt"><input type="radio" name="Q12 Expected monthly spend" value="Over $500"><span>Over $500</span></label>
+            <label class="opt"><input type="radio" name="Q12 Expected monthly spend" value="Not sure"><span>Not sure</span></label>
+          </div>
+        </fieldset>
+        <fieldset data-q="13">
+          <legend class="q"><span class="n">13.</span>What would make you trust someone with your accounts or footage?</legend>
+          <textarea name="Q13 What builds trust" aria-label="Answer to question 13"></textarea>
+        </fieldset>
+        <fieldset data-q="14">
+          <legend class="q"><span class="n">14.</span>Do you know other creators who would want this?</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q14 Knows other creators" value="Yes"><span>Yes</span></label>
+            <label class="opt"><input type="radio" name="Q14 Knows other creators" value="No"><span>No</span></label>
+            <label class="opt"><input type="radio" name="Q14 Knows other creators" value="Not sure"><span>Not sure</span></label>
+          </div>
+          <span class="sublabel">Would you be happy to introduce us?</span>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="Q14 Happy to introduce us" value="Yes"><span>Yes</span></label>
+            <label class="opt"><input type="radio" name="Q14 Happy to introduce us" value="Maybe"><span>Maybe</span></label>
+            <label class="opt"><input type="radio" name="Q14 Happy to introduce us" value="No"><span>No</span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card" aria-labelledby="s5">
+        <h2 id="s5">Almost done</h2>
+        <p class="sub">We only use your answers to plan our services. They come straight to our inbox and are never shared or sold. Want them deleted? Email <a href="mailto:JD_ACTS@pm.me">JD_ACTS@pm.me</a> and we'll sort it.</p>
+        <label class="consent"><input type="checkbox" id="consent" name="OK to keep answers" value="Yes" required><span>You can keep my answers to plan acTS services. <span class="req">(required)</span></span></label>
+        <label class="consent"><input type="checkbox" name="OK to contact me" value="Yes"><span>You can contact me about my answers.</span></label>
+        <div class="tip"><strong>Under 18?</strong> Please check with a parent or guardian before you send this.</div>
+        <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="submit" class="submit" id="submit">Send my answers</button>
+        <p class="msg" id="msg" role="status" aria-live="polite"></p>
+      </section>
+    </form>
+
+    <section class="card thanks" id="thanks" tabindex="-1" aria-labelledby="t1">
+      <h2 id="t1">Thanks, that's heaps of help.</h2>
+      <p>We read every answer, and yours will shape what acTS offers first.</p>
+      <p>If you said we could, we'll be in touch soon. Questions in the meantime? Email <a href="mailto:JD_ACTS@pm.me">JD_ACTS@pm.me</a>.</p>
+    </section>
+  </div>
+</main>
+
+<footer>All Creative Technology Solutions (acTS) · Sydney, NSW · ABN 51 266 261 094</footer>
+
+<script>
+  // Web3Forms access key: it decides which inbox gets the answers, and is safe to be public.
+  const ACCESS_KEY = '309a0ab0-236f-4fd5-bb67-0e1c83b4f083';
+
+  const form = document.getElementById('form');
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('submit');
+  const questions = [...form.querySelectorAll('fieldset[data-q]')];
+
+  function answered(fs) {
+    return [...fs.querySelectorAll('input, textarea, select')].some(el =>
+      (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value.trim() !== '');
+  }
+  function updateProgress() {
+    const n = questions.filter(answered).length;
+    document.getElementById('fill').style.width = (n / questions.length * 100) + '%';
+    document.getElementById('count').textContent = n + ' of ' + questions.length + ' answered';
+  }
+  form.addEventListener('input', updateProgress);
+  form.addEventListener('change', updateProgress);
+
+  // Multi-choice answers share a name, so join them instead of keeping only the last.
+  function payload() {
+    const fd = new FormData(form), out = {};
+    for (const key of new Set(fd.keys())) {
+      const vals = fd.getAll(key).map(v => String(v).trim()).filter(Boolean);
+      if (vals.length) out[key] = vals.join(', ');
+    }
+    out.access_key = ACCESS_KEY;
+    out.subject = 'Creator answers from ' + (out.Name || 'someone');
+    out.from_name = 'acTS creator questions';
+    return out;
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    msg.className = 'msg err';
+    const nameEl = document.getElementById('name');
+    if (!nameEl.value.trim()) { msg.textContent = 'Please add your name so we know who answered.'; nameEl.focus(); return; }
+    if (!document.getElementById('consent').checked) { msg.textContent = 'Please tick the first box so we can keep your answers.'; document.getElementById('consent').focus(); return; }
+    if (ACCESS_KEY.startsWith('PASTE-')) { msg.textContent = "This form isn't connected yet. Please email your answers to JD_ACTS@pm.me."; return; }
+
+    btn.disabled = true; btn.textContent = 'Sending...'; msg.className = 'msg'; msg.textContent = '';
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload())
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) throw new Error((json.body && json.body.message) || json.message || 'Send failed');
+      form.hidden = true;
+      document.querySelector('.progress').hidden = true;
+      const thanks = document.getElementById('thanks');
+      thanks.classList.add('show');
+      thanks.focus();
+      window.scrollTo(0, 0);
+    } catch (err) {
+      msg.className = 'msg err';
+      msg.textContent = "Sorry, that didn't send. Please try again in a minute, or email JD_ACTS@pm.me.";
+      btn.disabled = false; btn.textContent = 'Send my answers';
+    }
+  });
+</script>
+</body>
+</html>

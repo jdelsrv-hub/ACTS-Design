@@ -1,0 +1,1 @@
+This folder is part of the ACTS workspace. See README.md at the top of the ACTS folder.

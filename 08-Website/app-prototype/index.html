@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>acTS Creator Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Clickable prototype of the All Creative Technology Solutions (acTS) creator dashboard. Made-up numbers, no real login.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Layout: phone-first app shell on Night. Gradient login, then a bottom tab bar (phone) or sidebar (desktop) around 12px cards. Signal Green on one call to action per screen. Tokens match 08-Website/site/index.html. */
+  :root {
+    --night: #16112A;
+    --night-2: #1E1738;
+    --card: #221A3D;
+    --card-2: #2A2049;
+    --line: #34295C;
+    --purple: #6C3FE0;
+    --purple-deep: #3A2585;
+    --green: #2FD47F;
+    --lilac: #CBBDF7;
+    --white: #FFFFFF;
+    --placeholder: #8E84B5;
+    /* Status colours (proposed, not in the brand kit yet). Always shown with an icon and a word, never colour alone. */
+    --safe: #2FD47F;          /* Signal Green: done, connected, protected, going up */
+    --caution: #FFC857;       /* Caution Amber: needs a look, reversible warnings */
+    --danger: #FF6B70;        /* Alert Red: errors, can't-be-undone actions, at risk, going down */
+    --safe-wash: rgba(47, 212, 127, .14);
+    --caution-wash: rgba(255, 200, 87, .14);
+    --danger-wash: rgba(255, 107, 112, .14);
+    --lilac-wash: rgba(203, 189, 247, .12);
+    --purple-wash: rgba(108, 63, 224, .32);
+    --font-display: "Space Grotesk", Arial, sans-serif;
+    --font-body: Inter, Arial, sans-serif;
+    --font-mono: "JetBrains Mono", Consolas, monospace;
+    --radius: 12px;
+    --tabbar: 64px;
+    --gutter: 16px;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--night); color: var(--white); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; margin: 0; letter-spacing: -0.01em; text-wrap: balance; font-weight: 700; }
+  h1 { font-size: clamp(28px, 4.6vw, 36px); }
+  h2 { font-size: 20px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  a { color: var(--lilac); }
+  ul, ol { margin: 0; padding: 0; list-style: none; }
+  button { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 3px solid var(--lilac); outline-offset: 3px; }
+  h1:focus { outline: none; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+  .i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .i-sm { width: 16px; height: 16px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--lilac); text-wrap: balance; }
+  .lead { color: var(--lilac); font-size: 17px; max-width: 60ch; }
+  .muted { color: var(--lilac); }
+  .caption { font-size: 13px; color: var(--lilac); }
+  .soft { color: var(--lilac); }
+  .mono { font-family: var(--font-mono); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .wordmark { font-family: var(--font-display); letter-spacing: -0.02em; line-height: 1; text-decoration: none; font-size: 28px; display: inline-flex; }
+  .wordmark .ac { font-weight: 500; color: var(--lilac); }
+  .wordmark .ts { font-weight: 700; color: var(--green); }
+  .wordmark-lg { font-size: 44px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 12px 20px; border-radius: var(--radius); font-family: var(--font-body); font-weight: 600; font-size: 16px; line-height: 1.2; text-decoration: none; border: 0; cursor: pointer; transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; text-align: center; }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  .btn[disabled] { opacity: .6; cursor: progress; transform: none; }
+  .btn-green { background: var(--green); color: var(--night); }
+  .btn-purple { background: var(--purple); color: var(--white); }
+  .btn-ghost { background: transparent; color: var(--white); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .btn-ghost:hover { box-shadow: inset 0 0 0 1.5px var(--lilac); }
+  .btn-sm { min-height: 40px; padding: 8px 14px; font-size: 15px; }
+  .btn-block { width: 100%; }
+  .text-link { display: inline-flex; align-items: center; gap: 6px; color: var(--lilac); font-weight: 600; font-size: 15px; text-underline-offset: 3px; }
+
+  .tag { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 12px; font-size: 13px; background: var(--lilac-wash); color: var(--lilac); white-space: nowrap; }
+  .tag-solid { background: var(--purple-wash); color: var(--white); }
+
+  /* Status chips, buttons and panels */
+  .chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 10px; font-family: var(--font-body); font-size: 13px; font-weight: 600; letter-spacing: 0; line-height: 1.3; white-space: nowrap; }
+  .chip .i { width: 14px; height: 14px; }
+  .chip-safe { background: var(--safe-wash); color: var(--safe); }
+  .chip-caution { background: var(--caution-wash); color: var(--caution); }
+  .chip-danger { background: var(--danger-wash); color: var(--danger); }
+  .btn-danger { background: var(--danger); color: var(--night); }
+  .btn-danger-ghost { background: transparent; color: var(--danger); box-shadow: inset 0 0 0 1.5px var(--danger); }
+  .tone-panel { display: grid; gap: 14px; border-radius: var(--radius); padding: 16px 18px; border: 1px solid; }
+  .tone-panel > p, .tone-msg { display: flex; gap: 10px; align-items: flex-start; }
+  .tone-panel .i, .tone-msg .i { margin-top: 2px; }
+  .tone-safe { background: var(--safe-wash); border-color: rgba(47, 212, 127, .4); }
+  .tone-safe > p > .i, .tone-safe > .i { color: var(--safe); }
+  .tone-caution { background: var(--caution-wash); border-color: rgba(255, 200, 87, .4); }
+  .tone-caution > p > .i, .tone-caution > .i { color: var(--caution); }
+  .tone-danger { background: var(--danger-wash); border-color: rgba(255, 107, 112, .45); }
+  .tone-danger > p > .i, .tone-danger > .i { color: var(--danger); }
+  .ic-safe { color: var(--safe); }
+  .ic-caution { color: var(--caution); }
+  .ic-danger { color: var(--danger); }
+
+  label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+  input[type="text"], input[type="email"], input[type="url"], select, textarea { width: 100%; font: inherit; font-size: 16px; font-weight: 400; color: var(--white); background: var(--night); border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 13px; }
+  input::placeholder, textarea::placeholder { color: var(--placeholder); }
+  textarea { min-height: 96px; resize: vertical; }
+  .field-error { color: var(--danger); font-size: 14px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  input[aria-invalid="true"] { border-color: var(--danger); }
+
+  .card { background: var(--card); border-radius: var(--radius); padding: 24px; min-width: 0; display: grid; gap: 16px; align-content: start; }
+  .card-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px; }
+  .card-head > div { display: grid; gap: 4px; min-width: 0; }
+  .icon-chip { width: 40px; height: 40px; border-radius: 10px; background: var(--lilac-wash); color: var(--lilac); display: grid; place-items: center; flex: none; }
+  .notice { display: flex; gap: 10px; align-items: flex-start; border: 1px dashed var(--lilac); border-radius: var(--radius); padding: 14px 18px; color: var(--lilac); font-size: 15px; }
+  .notice .i { margin-top: 2px; }
+  .notice a { font-weight: 600; }
+  .notice.tone-caution { border: 1px solid rgba(255, 200, 87, .4); color: var(--white); }
+  .notice.tone-caution > .i { color: var(--caution); }
+  .notice.tone-caution a { color: var(--caution); }
+
+  /* ---------- Login ---------- */
+  .login { min-height: 100vh; min-height: 100dvh; background: linear-gradient(140deg, var(--purple) 0%, var(--purple-deep) 30%, var(--night) 72%); display: grid; align-items: center; padding-block: 40px; padding-left: max(var(--gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--gutter), env(safe-area-inset-right, 0px)); }
+  .login-wrap { width: 100%; max-width: 1040px; margin: 0 auto; display: grid; gap: 28px; grid-template-areas: "intro" "card" "features"; }
+  .login-intro { grid-area: intro; display: grid; gap: 18px; min-width: 0; }
+  .login-intro .lead { color: var(--white); opacity: .9; }
+  .login-card { grid-area: card; background: rgba(22, 17, 42, .9); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 16px; min-width: 0; box-shadow: 0 24px 60px rgba(8, 5, 20, .45); }
+  .login-card form { display: grid; gap: 14px; }
+  .or { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; color: var(--lilac); font-size: 14px; }
+  .or::before, .or::after { content: ""; height: 1px; background: var(--line); }
+  .login-features { grid-area: features; display: grid; gap: 16px; }
+  .login-features li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; }
+  .login-features b { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 500; }
+  .login-features span span { color: var(--lilac); font-size: 15px; }
+  @media (min-width: 900px) {
+    .login-wrap { grid-template-columns: 1.1fr 1fr; grid-template-areas: "intro card" "features card"; column-gap: 64px; row-gap: 36px; align-items: start; }
+    .login-card { padding: 32px; align-self: center; }
+    .login h1 { font-size: 48px; }
+  }
+
+  /* ---------- App shell ---------- */
+  .app { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr); }
+  .sidebar { display: none; }
+  .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; padding-left: max(var(--gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--gutter), env(safe-area-inset-right, 0px)); background: rgba(22, 17, 42, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  body:has(.app:not([hidden]))::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--night); }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--purple); color: var(--white); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 17px; text-decoration: none; flex: none; }
+  .main { min-width: 0; padding-block: 20px calc(var(--tabbar) + 40px + env(safe-area-inset-bottom, 0px)); padding-left: max(var(--gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--gutter), env(safe-area-inset-right, 0px)); }
+  .main-inner { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+  .proto-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 16px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--lilac); font-size: 14px; }
+  .app-footer { border-top: 1px solid var(--line); padding-top: 20px; color: var(--lilac); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(3, 1fr); background: rgba(22, 17, 42, .96); backdrop-filter: blur(10px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(var(--gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--gutter), env(safe-area-inset-right, 0px)); }
+  .tabbar a { height: var(--tabbar); display: grid; place-items: center; align-content: center; gap: 4px; text-decoration: none; color: var(--lilac); font-size: 13px; font-weight: 600; }
+  .tabbar .pip { width: 56px; height: 30px; border-radius: 999px; display: grid; place-items: center; transition: background .15s ease; }
+  .tabbar a[aria-current="page"] { color: var(--white); }
+  .tabbar a[aria-current="page"] .pip { background: var(--purple); }
+
+  @media (min-width: 900px) {
+    .app { grid-template-columns: 232px minmax(0, 1fr); }
+    .topbar, .tabbar { display: none; }
+    body:has(.app:not([hidden]))::before { display: none; }
+    .sidebar { display: flex; flex-direction: column; gap: 32px; position: sticky; top: 0; height: 100vh; padding-block: 28px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: 20px; background: var(--night-2); border-right: 1px solid var(--line); }
+    .side-lockup { display: grid; gap: 8px; padding-inline: 8px; }
+    .side-lockup .name { font-size: 12px; color: var(--lilac); font-weight: 600; line-height: 1.3; }
+    .side-nav { display: grid; gap: 4px; }
+    .side-nav a { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: var(--radius); color: var(--lilac); text-decoration: none; font-weight: 600; }
+    .side-nav a:hover { background: var(--lilac-wash); color: var(--white); }
+    .side-nav a[aria-current="page"] { background: var(--purple-wash); color: var(--white); }
+    .side-foot { margin-top: auto; display: grid; gap: 14px; padding-inline: 8px; }
+    .who { display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .who > span:last-child { display: grid; min-width: 0; }
+    .who b { font-size: 15px; }
+    .who-email { font-size: 13px; color: var(--lilac); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .main { padding-block: 32px 56px; padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(40px, env(safe-area-inset-right, 0px)); }
+  }
+
+  .screen { display: grid; gap: 20px; min-width: 0; }
+  .screen-head { display: grid; gap: 10px; }
+
+  /* ---------- Home ---------- */
+  .stat-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 640px) { .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .stat-card { gap: 10px; }
+  .stat-top { display: flex; align-items: center; gap: 10px; }
+  .stat-top .icon-chip { width: 36px; height: 36px; }
+  .stat-label { font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; line-height: 1.3; }
+  .stat-value { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 2.8vw, 36px); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat-value small { font-size: .5em; font-weight: 500; color: var(--lilac); margin-left: 4px; }
+  .stat-delta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; color: var(--white); }
+  .stat-split { font-size: 13px; color: var(--lilac); font-variant-numeric: tabular-nums; }
+
+  .seg { display: inline-grid; grid-auto-flow: column; gap: 4px; padding: 4px; background: var(--night); border-radius: var(--radius); }
+  .seg button { border: 0; background: transparent; color: var(--lilac); padding: 8px 14px; min-height: 40px; border-radius: 9px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .seg button:hover { color: var(--white); }
+  .seg button[aria-pressed="true"] { background: var(--purple); color: var(--white); }
+  @media (max-width: 520px) { .seg { display: grid; grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); width: 100%; } .seg button { padding-inline: 6px; } }
+
+  .chart { position: relative; touch-action: pan-y; border-radius: 8px; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--line); stroke-width: 1; }
+  .chart .tick { fill: var(--lilac); font-family: var(--font-mono); font-size: 12px; }
+  .chart .line { fill: none; stroke: var(--lilac); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .stop-a { stop-color: var(--purple); stop-opacity: .55; }
+  .chart .stop-b { stop-color: var(--purple); stop-opacity: 0; }
+  .chart .marker { stroke: var(--lilac); stroke-width: 1; stroke-dasharray: 3 4; opacity: .7; }
+  .chart .marker-label { fill: var(--lilac); font-family: var(--font-body); font-size: 12px; }
+  .chart .end-dot { fill: var(--lilac); stroke: var(--card); stroke-width: 2; }
+  .chart .hover-line { stroke: var(--lilac); stroke-width: 1; opacity: .55; }
+  .chart .hover-dot { fill: var(--white); stroke: var(--purple); stroke-width: 3; }
+  .tip { position: absolute; pointer-events: none; background: var(--night); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; display: grid; gap: 2px; white-space: nowrap; box-shadow: 0 10px 30px rgba(8, 5, 20, .5); }
+  .tip b { font-family: var(--font-display); font-size: 16px; font-variant-numeric: tabular-nums; }
+  .tip span { font-size: 13px; color: var(--lilac); }
+  .insight { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+  .insight .i { color: var(--lilac); margin-top: 2px; }
+  details.more summary { cursor: pointer; color: var(--lilac); font-weight: 600; font-size: 15px; display: inline-flex; gap: 6px; align-items: center; list-style: none; }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more summary .i { transition: transform .15s ease; }
+  details.more[open] summary .i { transform: rotate(180deg); }
+  .table-scroll { overflow-x: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; max-height: 320px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { position: sticky; top: 0; background: var(--night-2); color: var(--lilac); font-weight: 600; }
+
+  .home-grid { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+  .home-side { display: grid; gap: 20px; align-content: start; min-width: 0; }
+  @media (min-width: 1100px) { .home-grid { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); } }
+
+  .posts li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding-block: 14px; border-top: 1px solid var(--line); }
+  .posts li:first-child { border-top: 0; padding-top: 4px; }
+  .rank { font-family: var(--font-mono); color: var(--lilac); font-size: 14px; }
+  .post-title { font-weight: 600; line-height: 1.35; }
+  .post-meta { display: flex; align-items: center; gap: 6px; color: var(--lilac); font-size: 13px; margin-top: 2px; }
+  .post-views { text-align: right; font-variant-numeric: tabular-nums; }
+  .post-views b { display: block; font-family: var(--font-display); font-size: 17px; }
+  .post-views span { font-size: 13px; color: var(--lilac); }
+
+  .platforms li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+  .platforms b { display: block; }
+  .platform-status { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--lilac); }
+  .platforms { display: grid; gap: 14px; }
+
+  .next-card { background: linear-gradient(150deg, var(--purple-deep), var(--card) 70%); }
+  .score-line { display: flex; align-items: baseline; gap: 8px; }
+  .score-line b { font-family: var(--font-display); font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .bar { height: 8px; border-radius: 999px; background: var(--night); overflow: hidden; }
+  .bar span { display: block; height: 100%; border-radius: inherit; background: var(--lilac); transition: width .4s ease, background .2s ease; }
+  .bar.is-danger span { background: var(--danger); }
+  .bar.is-caution span { background: var(--caution); }
+  .bar.is-safe span { background: var(--safe); }
+  .next-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+
+  .empty { justify-items: start; }
+
+  /* ---------- Tools ---------- */
+  .tiles { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 1100px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .tile { text-align: left; background: var(--card); border: 0; border-radius: var(--radius); padding: 24px; display: grid; gap: 10px; align-content: start; cursor: pointer; min-width: 0; transition: background .15s ease, box-shadow .15s ease; }
+  .tile:hover { background: var(--card-2); }
+  .tile[aria-pressed="true"] { background: var(--card-2); box-shadow: inset 0 0 0 2px var(--lilac); }
+  .tile h2 { font-size: 17px; }
+  .tile-desc { color: var(--lilac); font-size: 14px; }
+  .tile-status { font-size: 13px; color: var(--lilac); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  @media (max-width: 599px) { .tile { padding: 20px; } .tile-desc { display: none; } }
+
+  .tool-panel { gap: 22px; scroll-margin-top: 90px; }
+  .panel-head { display: flex; gap: 14px; align-items: flex-start; }
+  .panel-head > div { display: grid; gap: 4px; min-width: 0; }
+  .divider { height: 1px; background: var(--line); border: 0; margin: 0; }
+  .flash { animation: flash .6s ease; }
+  @keyframes flash { from { opacity: .35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .score-wrap { display: flex; flex-wrap: wrap; gap: 20px 28px; align-items: center; }
+  .ring { position: relative; width: 132px; height: 132px; flex: none; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .track { fill: none; stroke: var(--night); stroke-width: 12; }
+  .ring .fill { fill: none; stroke: var(--lilac); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset .45s ease, stroke .2s ease; }
+  .ring.is-danger .fill { stroke: var(--danger); }
+  .ring.is-caution .fill { stroke: var(--caution); }
+  .ring.is-safe .fill { stroke: var(--safe); }
+  .score-copy .chip { justify-self: start; }
+  .ring-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring-label b { font-family: var(--font-display); font-size: 36px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .ring-label span { font-size: 13px; color: var(--lilac); }
+  .score-copy { display: grid; gap: 8px; flex: 1 1 240px; min-width: 0; }
+  .score-copy h3 { font-size: 22px; }
+  .next-fix { display: flex; gap: 8px; align-items: flex-start; font-size: 15px; }
+  .next-fix .i { color: var(--lilac); margin-top: 2px; }
+
+  .check-group { display: grid; gap: 12px; }
+  .check-group > p { color: var(--lilac); font-size: 15px; }
+  .checks { display: grid; gap: 10px; }
+  .check-item { background: var(--night-2); border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 10px; }
+  .check-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 14px; align-items: start; font-weight: 400; font-size: 16px; cursor: pointer; }
+  .check-row b { display: block; font-weight: 600; }
+  .check-row .why { display: block; color: var(--lilac); font-size: 14px; margin-top: 2px; }
+  .pts { font-family: var(--font-mono); font-size: 13px; color: var(--lilac); white-space: nowrap; padding-top: 2px; }
+  input.check { appearance: none; -webkit-appearance: none; width: 24px; height: 24px; margin: 0; border: 2px solid var(--lilac); border-radius: 6px; background: transparent; cursor: pointer; display: block; }
+  input.check:checked { border-color: var(--safe); background: var(--safe) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2316112A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 16px no-repeat; }
+  .check-item:has(input.check:checked) { box-shadow: inset 3px 0 0 var(--safe); }
+  .how { padding-left: 38px; }
+  @media (max-width: 599px) {
+    .check-item { padding: 14px 16px; }
+    .check-row { grid-template-columns: 24px minmax(0, 1fr); row-gap: 4px; }
+    .check-row .pts { grid-column: 2; padding-top: 0; }
+  }
+  .how summary { font-size: 14px; }
+  .how ol { list-style: decimal; padding-left: 20px; margin-top: 8px; display: grid; gap: 4px; color: var(--white); font-size: 14px; }
+  .help-row { display: grid; gap: 14px; justify-items: start; padding: 20px; border-radius: var(--radius); background: var(--night-2); }
+
+  .form-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 720px) { .form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } .form-grid.two { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .result { display: grid; gap: 14px; }
+  .result-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+  .parts li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding-block: 14px; border-top: 1px solid var(--line); }
+  .parts li:first-child { border-top: 0; padding-top: 0; }
+  .parts .part { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--lilac); grid-column: 1 / -1; }
+  .parts b { font-weight: 600; }
+  .parts .why { color: var(--lilac); font-size: 14px; grid-column: 1 / -1; }
+  .price { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-top: 14px; border-top: 2px solid var(--line); }
+  .total b { font-family: var(--font-display); font-size: 24px; font-variant-numeric: tabular-nums; }
+  .rec { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-radius: var(--radius); background: var(--purple-wash); font-size: 15px; }
+  .rec .i { margin-top: 2px; color: var(--lilac); }
+
+  .clips { display: grid; gap: 10px; }
+  .clip { background: var(--night-2); border-radius: var(--radius); padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: start; }
+  .clip-time { font-family: var(--font-mono); font-size: 13px; color: var(--lilac); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .clip b { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 500; margin-top: 4px; }
+  .clip .why { color: var(--lilac); font-size: 14px; margin-top: 2px; }
+  .clip .btn { align-self: center; }
+  @media (max-width: 599px) { .clip { grid-template-columns: minmax(0, 1fr); } .clip .btn { justify-self: start; } }
+
+  .titles { display: grid; gap: 10px; }
+  .title-opt { background: var(--night-2); border-radius: var(--radius); padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; }
+  .title-opt p { font-weight: 600; }
+  .title-opt .count { font-family: var(--font-mono); font-size: 12px; color: var(--lilac); }
+  .caption-box { background: var(--night-2); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
+  .caption-box p { white-space: pre-line; }
+  .copy-btn { border: 0; background: var(--lilac-wash); color: var(--lilac); border-radius: 10px; min-height: 40px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; cursor: pointer; justify-self: start; }
+  .copy-btn:hover { color: var(--white); }
+
+  /* ---------- Settings ---------- */
+  .settings { display: grid; gap: 20px; max-width: 780px; }
+  .conn { display: grid; gap: 0; }
+  .conn > li { display: grid; gap: 14px; padding-block: 16px; border-top: 1px solid var(--line); }
+  .conn > li:first-child { border-top: 0; padding-top: 0; }
+  .conn > li:last-child { padding-bottom: 0; }
+  .conn-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+  .conn-row b { display: block; }
+  .conn-row .caption { display: block; }
+  @media (max-width: 599px) { .conn-row { grid-template-columns: 40px minmax(0, 1fr); } .conn-row > :nth-child(3) { grid-column: 2; justify-self: start; } }
+  .confirm { background: var(--night-2); border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 14px; }
+  .switch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+  .switch-row b { display: block; font-weight: 600; }
+  .switch { position: relative; width: 52px; height: 30px; border-radius: 999px; border: 0; background: var(--line); cursor: pointer; flex: none; transition: background .15s ease; }
+  .switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: var(--lilac); transition: transform .18s ease, background .15s ease; }
+  .switch[aria-checked="true"] { background: var(--purple); }
+  .switch[aria-checked="true"]::after { transform: translateX(22px); background: var(--white); }
+  .danger { background: transparent; border: 1.5px solid rgba(255, 107, 112, .45); }
+  .danger h2 { display: flex; align-items: center; gap: 10px; }
+  .danger h2 .i { color: var(--danger); }
+
+  /* ---------- Toast ---------- */
+  .toast { position: fixed; z-index: 50; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar) + 16px + env(safe-area-inset-bottom, 0px)); width: max-content; max-width: calc(100% - 2 * var(--gutter)); background: var(--card-2); color: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; font-size: 15px; box-shadow: 0 16px 40px rgba(8, 5, 20, .55); display: flex; gap: 10px; align-items: flex-start; }
+  .toast .i { color: var(--lilac); margin-top: 2px; }
+  .toast.t-safe { border-color: rgba(47, 212, 127, .5); } .toast.t-safe .i { color: var(--safe); }
+  .toast.t-caution { border-color: rgba(255, 200, 87, .5); } .toast.t-caution .i { color: var(--caution); }
+  .toast.t-danger { border-color: rgba(255, 107, 112, .55); } .toast.t-danger .i { color: var(--danger); }
+  .toast.on-login { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  @media (min-width: 900px) { .toast { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: calc(50% + 116px); } .toast.on-login { left: 50%; } }
+</style>
+</head>
+<body>
+
+<!-- Lucide-style line icons (2px stroke, rounded ends) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-tools" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/><path d="M8 22h8"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9"/><path d="M14.5 14.5 20 20"/><path d="M8.1 8.1 12 12"/></symbol>
+  <symbol id="i-captions" viewBox="0 0 24 24"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></symbol>
+  <symbol id="i-trend-down" viewBox="0 0 24 24"><path d="M22 17 13.5 8.5 8.5 13.5 2 7"/><path d="M16 17h6v-6"/></symbol>
+  <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-octagon" viewBox="0 0 24 24"><path d="M12 16h.01"/><path d="M12 8v4"/><path d="M15.31 2a2 2 0 0 1 1.42.59l4.68 4.68a2 2 0 0 1 .59 1.42v6.62a2 2 0 0 1-.59 1.42l-4.68 4.68a2 2 0 0 1-1.42.59H8.69a2 2 0 0 1-1.42-.59l-4.68-4.68A2 2 0 0 1 2 15.31V8.69a2 2 0 0 1 .59-1.42l4.68-4.68A2 2 0 0 1 8.69 2z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
+  <symbol id="i-youtube" viewBox="0 0 24 24"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></symbol>
+  <symbol id="i-twitch" viewBox="0 0 24 24"><path d="M21 2H3v16h5v4l4-4h5l4-4V2zm-10 9V7m5 4V7"/></symbol>
+  <symbol id="i-instagram" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></symbol>
+  <symbol id="i-tiktok" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3l14 9-14 9z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="i-unlink" viewBox="0 0 24 24"><path d="m18.84 12.25 1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="m5.17 11.75-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><path d="M8 2v3"/><path d="M2 8h3"/><path d="M16 19v3"/><path d="M19 16h3"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+</svg>
+
+<noscript><p class="notice" style="margin:16px">This prototype needs JavaScript turned on to click through the screens.</p></noscript>
+
+<!-- ================= Screen 1: Login ================= -->
+<div class="login" id="view-login">
+  <div class="login-wrap">
+    <div class="login-intro">
+      <span class="wordmark wordmark-lg" role="img" aria-label="acTS"><span class="ac">ac</span><span class="ts">TS</span></span>
+      <h1 id="title-login" tabindex="-1">Your stats and tools, <span class="soft">sorted.</span></h1>
+      <p class="lead">All Creative Technology Solutions (acTS) brings your YouTube and Twitch numbers into one place, with tools to keep your setup and accounts safe.</p>
+    </div>
+
+    <div class="login-card">
+      <p class="notice" id="login-notice" hidden></p>
+      <h2>Log in to your dashboard</h2>
+      <form id="login-form" novalidate>
+        <label for="login-email">Email
+          <input id="login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" value="alex@example.com">
+        </label>
+        <p class="field-error" id="login-error" hidden><svg class="i i-sm" aria-hidden="true"><use href="#i-octagon"/></svg>That doesn't look like an email address. Check it and try again.</p>
+        <button class="btn btn-green btn-block" type="submit">Continue with email</button>
+      </form>
+      <div class="or" aria-hidden="true">or</div>
+      <button class="btn btn-ghost btn-block" type="button" id="login-google">Continue with Google</button>
+      <p class="caption">This is a preview with made-up numbers. Any email works and nothing is sent.</p>
+    </div>
+
+    <ul class="login-features">
+      <li><span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-chart"/></svg></span><span><b>Your numbers in one place</b><span>Followers, views and watch time from YouTube and Twitch, side by side.</span></span></li>
+      <li><span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg></span><span><b>A security checkup</b><span>A score out of 100 and the next thing to fix to keep your accounts safe.</span></span></li>
+      <li><span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-tools"/></svg></span><span><b>Handy tools</b><span>Plan your gear, find your best clips and write titles and captions.</span></span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= App shell ================= -->
+<div class="app" id="view-app" hidden>
+  <aside class="sidebar">
+    <div class="side-lockup">
+      <a class="wordmark" href="#home" aria-label="acTS dashboard home"><span class="ac">ac</span><span class="ts">TS</span></a>
+      <span class="name">All Creative Technology Solutions</span>
+    </div>
+    <nav class="side-nav" aria-label="Main">
+      <a href="#home" data-nav="home"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg>Home</a>
+      <a href="#tools" data-nav="tools"><svg class="i" aria-hidden="true"><use href="#i-tools"/></svg>Tools</a>
+      <a href="#settings" data-nav="settings"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><span class="avatar" aria-hidden="true">A</span><span><b>Alex Makes</b><span class="who-email" data-email>alex@example.com</span></span></div>
+      <a class="text-link" href="#login" data-logout><svg class="i i-sm" aria-hidden="true"><use href="#i-logout"/></svg>Log out</a>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <a class="wordmark" href="#home" aria-label="acTS dashboard home"><span class="ac">ac</span><span class="ts">TS</span></a>
+    <a class="avatar" href="#settings" aria-label="Your settings">A</a>
+  </header>
+
+  <main class="main">
+    <div class="main-inner">
+      <p class="proto-strip"><span class="tag tag-solid">Prototype</span>Made-up numbers so you can click around. Nothing is saved or sent.</p>
+
+      <!-- ================= Screen 2: Dashboard home ================= -->
+      <section class="screen" data-screen="home" aria-labelledby="title-home">
+        <header class="screen-head">
+          <p class="eyebrow">Last 28 days · 23 September to 20 October 2026</p>
+          <h1 id="title-home" tabindex="-1">Hey Alex, here's how you're tracking</h1>
+          <p class="lead" id="home-lead"></p>
+        </header>
+
+        <p class="notice" id="home-notice" hidden></p>
+
+        <div class="screen" id="home-stats">
+          <div class="stat-grid" id="stat-grid"></div>
+
+          <section class="card" aria-labelledby="chart-title">
+            <div class="card-head">
+              <div>
+                <h2 id="chart-title">28-day trend</h2>
+                <p class="caption" id="chart-sub"></p>
+              </div>
+              <div class="seg" role="group" aria-label="Choose what the chart shows">
+                <button type="button" data-metric="views" aria-pressed="true">Views</button>
+                <button type="button" data-metric="hours" aria-pressed="false">Watch time</button>
+                <button type="button" data-metric="followers" aria-pressed="false">New followers</button>
+              </div>
+            </div>
+            <div class="chart" id="chart" tabindex="0" role="img"></div>
+            <p class="insight" id="chart-insight"></p>
+            <details class="more">
+              <summary>See the daily numbers <svg class="i i-sm" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+              <div class="table-scroll"><table id="chart-table"></table></div>
+            </details>
+          </section>
+        </div>
+
+        <section class="card empty" id="home-empty" hidden>
+          <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg></span>
+          <h2>Connect a platform to see your stats</h2>
+          <p class="muted">Once YouTube or Twitch is connected, your followers, views and watch time show up here.</p>
+          <a class="btn btn-purple" href="#settings">Go to Settings</a>
+        </section>
+
+        <div class="home-grid">
+          <section class="card" id="posts-card" aria-labelledby="posts-title">
+            <div class="card-head">
+              <div>
+                <h2 id="posts-title">Top 5 posts</h2>
+                <p class="caption">Ranked by views in the last 28 days</p>
+              </div>
+            </div>
+            <ol class="posts" id="posts"></ol>
+          </section>
+
+          <div class="home-side">
+            <section class="card next-card" aria-labelledby="next-title">
+              <span class="eyebrow">Your next step</span>
+              <div class="next-head"><h2 id="next-title">Security score</h2><span class="chip chip-danger" id="next-chip"></span></div>
+              <div class="score-line"><b id="next-score">30</b><span class="muted">out of 100</span></div>
+              <div class="bar is-danger" id="next-bar-wrap" aria-hidden="true"><span id="next-bar" style="width:30%"></span></div>
+              <p id="next-copy">Most hacks start with one reused password. Our 5-minute checkup shows what to fix first.</p>
+              <a class="btn btn-green" href="#security" id="next-btn">Start your security checkup</a>
+            </section>
+
+            <section class="card" aria-labelledby="platforms-title">
+              <h2 id="platforms-title">Connected platforms</h2>
+              <ul class="platforms" id="platforms"></ul>
+              <p class="caption">We only ask for read-only access. We can see your stats, but we can't post or change anything.</p>
+              <p class="caption">Until Instagram and TikTok are ready, you can check your stats in each app under Insights (Instagram) and Analytics (TikTok).</p>
+              <a class="text-link" href="#settings">Manage connections <svg class="i i-sm" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Screen 3: Tools ================= -->
+      <section class="screen" data-screen="tools" aria-labelledby="title-tools" hidden>
+        <header class="screen-head">
+          <p class="eyebrow">Tools</p>
+          <h1 id="title-tools" tabindex="-1">Tools for the tech side</h1>
+          <p class="lead">Pick a tool. The security checkup works now. The other three show a sample result, so you can see how they'd work and tell us what you think.</p>
+        </header>
+
+        <div class="tiles" role="group" aria-label="Choose a tool">
+          <button class="tile" type="button" data-tool="security" aria-pressed="true" aria-controls="panel-security">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg></span>
+            <h2>Security checkup</h2>
+            <span class="tile-desc">Tick off what you've done and get a score out of 100.</span>
+            <span class="tile-status" id="tile-score">Score 30 of 100</span>
+          </button>
+          <button class="tile" type="button" data-tool="setup" aria-pressed="false" aria-controls="panel-setup">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>
+            <h2>Setup builder</h2>
+            <span class="tile-desc">Tell us your budget and get a parts list that's worth it.</span>
+            <span class="tile-status">Sample result</span>
+          </button>
+          <button class="tile" type="button" data-tool="clips" aria-pressed="false" aria-controls="panel-clips">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-scissors"/></svg></span>
+            <h2>Clip finder</h2>
+            <span class="tile-desc">Find the best short clips in a long video or stream.</span>
+            <span class="tile-status">Sample result</span>
+          </button>
+          <button class="tile" type="button" data-tool="captions" aria-pressed="false" aria-controls="panel-captions">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-captions"/></svg></span>
+            <h2>Title &amp; caption helper</h2>
+            <span class="tile-desc">Get title options and a caption that fits each platform.</span>
+            <span class="tile-status">Sample result</span>
+          </button>
+        </div>
+
+        <!-- Security checkup (interactive) -->
+        <section class="card tool-panel" id="panel-security" data-panel="security" aria-labelledby="h-security">
+          <div class="panel-head">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg></span>
+            <div>
+              <h2 id="h-security">Security checkup</h2>
+              <p class="caption">Takes about 5 minutes. Tick each one you've already done.</p>
+            </div>
+          </div>
+
+          <div class="score-wrap">
+            <div class="ring" role="img" id="ring" aria-label="Security score 30 out of 100">
+              <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill" id="ring-fill" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="228.7"/></svg>
+              <div class="ring-label" aria-hidden="true"><b id="ring-num">30</b><span>out of 100</span></div>
+            </div>
+            <div class="score-copy" aria-live="polite">
+              <span class="chip" id="score-chip"></span>
+              <h3 id="score-title">Let's lock things down</h3>
+              <p class="muted" id="score-copy">No stress, most creators start here. Fix the top one and you'll be safer straight away.</p>
+              <p class="next-fix" id="next-fix"></p>
+            </div>
+          </div>
+
+          <div id="check-groups" class="screen"></div>
+
+          <div class="help-row">
+            <h3>Want a hand with the rest?</h3>
+            <p class="muted">Our Safety and security pack walks you through each step on a video call. We'll sort the fiddly bits with you.</p>
+            <button class="btn btn-green" type="button" data-toast="Booking opens here at launch. This is a preview, so nothing was booked.">Book a free 15-minute chat</button>
+          </div>
+        </section>
+
+        <!-- Setup builder (mock) -->
+        <section class="card tool-panel" id="panel-setup" data-panel="setup" aria-labelledby="h-setup" hidden>
+          <div class="panel-head">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></span>
+            <div>
+              <h2 id="h-setup">Setup builder</h2>
+              <p class="caption">Tell us what you make and your budget. We'll tell you what's worth buying.</p>
+            </div>
+          </div>
+          <form class="screen" id="setup-form" novalidate>
+            <div class="form-grid three">
+              <label for="setup-platform">Where do you stream?
+                <select id="setup-platform"><option selected>Twitch</option><option>YouTube</option><option>TikTok LIVE</option></select>
+              </label>
+              <label for="setup-budget">Your budget
+                <select id="setup-budget"><option>Under $300</option><option selected>Up to $600</option><option>Up to $1,000</option><option>Over $1,000</option></select>
+              </label>
+              <label for="setup-type">What do you make?
+                <select id="setup-type"><option>Gaming</option><option>Just chatting</option><option selected>Gaming and just chatting</option><option>Music</option><option>Podcasts</option></select>
+              </label>
+            </div>
+            <div class="actions"><button class="btn btn-green" type="submit" data-busy="Building your setup…">Build my setup</button></div>
+          </form>
+          <hr class="divider">
+          <div class="result" id="setup-result">
+            <div class="result-head">
+              <h3>Here's what we'd buy for up to $600</h3>
+              <span class="tag">Sample result</span>
+            </div>
+            <ul class="parts" id="parts"></ul>
+            <div class="total"><span class="muted">Total, AUD inc. GST</span><b id="parts-total">$0</b></div>
+            <p class="rec"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg><span>Skip a capture card (a box that brings a console's picture into your computer). You stream PC games, so you don't need one. Put the $118 left over towards a second light later.</span></p>
+            <p class="caption">Sample prices only, not live prices. The real tool would check current prices from Australian stores.</p>
+          </div>
+        </section>
+
+        <!-- Clip finder (mock) -->
+        <section class="card tool-panel" id="panel-clips" data-panel="clips" aria-labelledby="h-clips" hidden>
+          <div class="panel-head">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-scissors"/></svg></span>
+            <div>
+              <h2 id="h-clips">Clip finder</h2>
+              <p class="caption">Paste a link to a long video or stream. We'll find the moments worth turning into short clips.</p>
+            </div>
+          </div>
+          <form class="screen" id="clips-form" novalidate>
+            <label for="clips-url">Link to your video or stream
+              <input id="clips-url" type="url" inputmode="url" value="https://www.youtube.com/watch?v=podcast-ep-12" placeholder="https://www.youtube.com/watch?v=…">
+            </label>
+            <div class="actions"><button class="btn btn-green" type="submit" data-busy="Finding your best moments…">Find my best moments</button></div>
+          </form>
+          <hr class="divider">
+          <div class="result" id="clips-result">
+            <div class="result-head">
+              <div>
+                <h3>Podcast ep. 12: brand deals, burnout and buying gear</h3>
+                <p class="caption">1 hr 12 min · 4 clips found · all under 60 seconds, so they fit TikTok, Reels and Shorts</p>
+              </div>
+              <span class="tag">Sample result</span>
+            </div>
+            <ol class="clips" id="clips"></ol>
+            <p class="rec"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg><span>We'd post clip 2 first. Clear tips get saved and shared more than jokes do, and saves help the next clip get seen.</span></p>
+            <div class="actions">
+              <button class="btn btn-ghost btn-sm" type="button" data-toast="At launch this sends your video to our clipping team. This is a preview, so nothing was sent.">Send us your video to edit</button>
+              <span class="caption">Our clipping service adds captions and sizes each clip for every app.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Title & caption helper (mock) -->
+        <section class="card tool-panel" id="panel-captions" data-panel="captions" aria-labelledby="h-captions" hidden>
+          <div class="panel-head">
+            <span class="icon-chip"><svg class="i" aria-hidden="true"><use href="#i-captions"/></svg></span>
+            <div>
+              <h2 id="h-captions">Title &amp; caption helper</h2>
+              <p class="caption">Tell us what your video is about. We'll write title options and a caption to match.</p>
+            </div>
+          </div>
+          <form class="screen" id="captions-form" novalidate>
+            <div class="form-grid two">
+              <label for="cap-topic">What's your video about?
+                <textarea id="cap-topic">I tested three budget mics under $100 for streaming, and the cheapest one surprised me</textarea>
+              </label>
+              <label for="cap-platform">Where are you posting?
+                <select id="cap-platform"><option selected>YouTube</option><option>TikTok</option><option>Instagram Reels</option><option>Twitch stream title</option></select>
+              </label>
+            </div>
+            <div class="actions"><button class="btn btn-green" type="submit" data-busy="Writing your titles…">Write titles and captions</button></div>
+          </form>
+          <hr class="divider">
+          <div class="result" id="captions-result">
+            <div class="result-head">
+              <h3>Title options</h3>
+              <span class="tag">Sample result</span>
+            </div>
+            <ul class="titles" id="titles"></ul>
+            <p class="rec"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg><span>We'd go with the first one. It promises a result, which tends to get more clicks than a question. All three are under 60 characters, so they won't get cut off on phones.</span></p>
+            <h3>Description</h3>
+            <div class="caption-box">
+              <p id="caption-text"></p>
+              <button class="copy-btn" type="button" data-copy-from="caption-text"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg>Copy description</button>
+            </div>
+            <p class="caption">This is a sample. In the prototype the result stays the same whatever you type.</p>
+          </div>
+        </section>
+      </section>
+
+      <!-- ================= Screen 4: Settings ================= -->
+      <section class="screen" data-screen="settings" aria-labelledby="title-settings" hidden>
+        <header class="screen-head">
+          <p class="eyebrow">Settings</p>
+          <h1 id="title-settings" tabindex="-1">Your account</h1>
+          <p class="lead">Your details, your connected platforms and how you log in.</p>
+        </header>
+
+        <div class="settings">
+          <section class="card" aria-labelledby="h-conn">
+            <div class="card-head">
+              <div>
+                <h2 id="h-conn">Connected accounts</h2>
+                <p class="caption">We use read-only access to pull your stats once a day.</p>
+              </div>
+            </div>
+            <ul class="conn" id="conn"></ul>
+          </section>
+
+          <section class="card" aria-labelledby="h-login">
+            <h2 id="h-login">Logging in</h2>
+            <div class="switch-row">
+              <div>
+                <b id="twostep-label">2-step login</b>
+                <p class="muted" id="twostep-desc">Ask for a code from an app on your phone each time you log in, as well as your email. We'd recommend turning this on.</p>
+              </div>
+              <button class="switch" type="button" role="switch" id="twostep" aria-checked="false" aria-labelledby="twostep-label" aria-describedby="twostep-desc"></button>
+            </div>
+            <div class="tone-panel tone-safe" id="twostep-on" hidden><p><svg class="i" aria-hidden="true"><use href="#i-circle-check"/></svg><span><b>On.</b> Next time you log in we'll ask for a 6-digit code from your authenticator app (like Google Authenticator or 1Password).</span></p></div>
+            <div class="tone-panel tone-caution" id="twostep-off"><p><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg><span><b>Off.</b> Anyone who gets into your email could get into your dashboard too. It takes about 2 minutes to turn on.</span></p></div>
+            <hr class="divider">
+            <div class="switch-row">
+              <div>
+                <b>Email</b>
+                <p class="muted" data-email>alex@example.com</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="#login" data-logout><svg class="i i-sm" aria-hidden="true"><use href="#i-logout"/></svg>Log out</a>
+            </div>
+          </section>
+
+          <section class="card danger" aria-labelledby="h-delete">
+            <h2 id="h-delete"><svg class="i" aria-hidden="true"><use href="#i-octagon"/></svg>Delete my account</h2>
+            <p class="muted">This deletes your acTS dashboard, your checkup results and your connections. Your YouTube and Twitch accounts aren't touched.</p>
+            <div id="delete-start"><button class="btn btn-danger-ghost" type="button" id="delete-btn"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg>Delete my account</button></div>
+            <div class="tone-panel tone-danger" id="delete-confirm" role="alertdialog" aria-labelledby="delete-q" hidden>
+              <p><svg class="i" aria-hidden="true"><use href="#i-octagon"/></svg><span><b id="delete-q">Are you sure?</b> This can't be undone. If something isn't working for you, we'd love to hear about it first.</span></p>
+              <div class="actions">
+                <button class="btn btn-danger" type="button" id="delete-yes">Yes, delete my account</button>
+                <button class="btn btn-ghost" type="button" id="delete-no">Keep my account</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <span>All Creative Technology Solutions (acTS) · Sydney, NSW</span>
+        <span>Prototype for creator feedback, October 2026</span>
+      </footer>
+    </div>
+  </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <a href="#home" data-nav="home"><span class="pip"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg></span>Home</a>
+    <a href="#tools" data-nav="tools"><span class="pip"><svg class="i" aria-hidden="true"><use href="#i-tools"/></svg></span>Tools</a>
+    <a href="#settings" data-nav="settings"><span class="pip"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg></span>Settings</a>
+  </nav>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Helpers ---------- */
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const fmt = (n) => Math.round(n).toLocaleString('en-AU');
+  const ic = (id, cls) => `<svg class="i ${cls || ''}" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const MON = MONTHS.map((m) => m.slice(0, 3));
+  const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayShort = (d) => `${d.getDate()} ${MON[d.getMonth()]}`;
+  const dayLong = (d) => `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+
+  // Status tones: safe (green), caution (amber), danger (red). Each always comes with an icon and words.
+  const TONE_ICON = { info: 'i-info', safe: 'i-circle-check', caution: 'i-alert', danger: 'i-octagon' };
+  const chip = (tone, icon, text) => `<span class="chip chip-${tone}">${ic(icon)}${text}</span>`;
+  const delta = (pct, text) => pct >= 0
+    ? `${chip('safe', 'i-trend', `Up ${pct}%`)}<span>${text}</span>`
+    : `${chip('danger', 'i-trend-down', `Down ${Math.abs(pct)}%`)}<span>${text}</span>`;
+  function band(s) {
+    if (s < 40) return { tone: 'danger', label: 'At risk', icon: 'i-octagon' };
+    if (s < 80) return { tone: 'caution', label: 'Some gaps', icon: 'i-alert' };
+    return { tone: 'safe', label: 'Well protected', icon: 'i-circle-check' };
+  }
+
+  let toastTimer;
+  function toast(msg, tone = 'info') {
+    const t = $('#toast');
+    t.classList.remove('t-safe', 't-caution', 't-danger');
+    if (tone !== 'info') t.classList.add(`t-${tone}`);
+    t.innerHTML = ic(TONE_ICON[tone]) + `<span>${esc(msg)}</span>`;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 3800);
+  }
+
+  // Pretend work: show a busy label, then reveal the sample result.
+  function fakeRun(btn, done) {
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = btn.dataset.busy || 'Working…';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = label;
+      done();
+    }, 900);
+  }
+  function flash(el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+
+  /* ---------- Mock data (all made up) ---------- */
+  const DAYS = Array.from({ length: 28 }, (_, i) => new Date(2026, 8, 23 + i)); // 23 Sep to 20 Oct 2026
+  const VIEWS = [4820, 4610, 5240, 6130, 6380, 4950, 4720, 5010, 4880, 5460, 6420, 6710, 5180, 5030, 5290, 9840, 11260, 10120, 9370, 7450, 6880, 6610, 6290, 6940, 7820, 8150, 6730, 6480];
+  const STREAM_DAYS = [0, 2, 5]; // Alex streams on Twitch on Sundays, Tuesdays and Fridays
+  const isStream = (i) => STREAM_DAYS.includes(DAYS[i].getDay());
+  const SERIES = {
+    views: VIEWS,
+    hours: VIEWS.map((v, i) => Math.round(v * 0.0185 + (isStream(i) ? 46 : 0))),
+    followers: VIEWS.map((v, i) => Math.round(v * 0.0021 + (isStream(i) ? 5 : 0)))
+  };
+  const SPLIT = { views: { youtube: 0.78, twitch: 0.22 }, hours: { youtube: 0.52, twitch: 0.48 }, followers: { youtube: 0.68, twitch: 0.32 } };
+  const FOLLOWERS = { youtube: 9140, twitch: 3340 };
+  const GROWTH = { views: 18, hours: -3, followers: 24 }; // % on the previous 28 days (watch time dips because Shorts took off)
+  const VIDEO_DAY = 15; // 8 October: the $600 setup video went up
+  const METRICS = {
+    views: { label: 'Views', unit: 'views', sub: 'Daily views' },
+    hours: { label: 'Watch time', unit: 'hours watched', sub: 'Daily hours watched' },
+    followers: { label: 'New followers', unit: 'new followers', sub: 'New followers and subscribers each day' }
+  };
+
+  const PLATFORMS = [
+    { id: 'youtube', name: 'YouTube', icon: 'i-youtube', account: 'Alex Makes', since: '2 October 2026' },
+    { id: 'twitch', name: 'Twitch', icon: 'i-twitch', account: 'alexmakes', since: '2 October 2026' },
+    { id: 'instagram', name: 'Instagram', icon: 'i-instagram', soon: true },
+    { id: 'tiktok', name: 'TikTok', icon: 'i-tiktok', soon: true }
+  ];
+
+  const POSTS = [
+    { title: 'I built a $600 streaming setup (and it sounds pro)', p: 'youtube', type: 'YouTube video', date: '8 October', views: 41280 },
+    { title: '3 mic mistakes new streamers make', p: 'youtube', type: 'YouTube Short', date: '1 October', views: 18600 },
+    { title: 'My stream scenes, explained in 8 minutes', p: 'youtube', type: 'YouTube video', date: '24 September', views: 12410 },
+    { title: 'Why your stream sounds echoey (and the $20 fix)', p: 'youtube', type: 'YouTube Short', date: '13 October', views: 9870 },
+    { title: 'Late-night Minecraft build with chat', p: 'twitch', type: 'Twitch stream', date: '10 October', views: 6940 },
+    { title: 'Q&A: how I plan a week of content', p: 'twitch', type: 'Twitch stream', date: '4 October', views: 3880 },
+    { title: 'Testing new overlays, come hang out', p: 'twitch', type: 'Twitch stream', date: '16 October', views: 3120 },
+    { title: 'Room tour: my streaming corner', p: 'youtube', type: 'YouTube Short', date: '15 October', views: 2950 },
+    { title: 'Sunday chill stream: chat picks the game', p: 'twitch', type: 'Twitch stream', date: '27 September', views: 2760 },
+    { title: 'Building my dream desk on stream', p: 'twitch', type: 'Twitch stream', date: '13 October', views: 2410 }
+  ];
+
+  const CHECKS = [
+    {
+      group: '2-step login on each platform',
+      intro: '2-step login means you need a code from your phone as well as your password. It stops most account takeovers.',
+      items: [
+        { id: 'yt', title: 'YouTube (your Google account)', pts: 10, how: ['Go to myaccount.google.com and open Security.', 'Turn on 2-Step Verification.', 'Use an authenticator app instead of text messages if you can. Codes from an app are harder to steal.'] },
+        { id: 'tw', title: 'Twitch', pts: 10, how: ['Open Settings, then Security and Privacy.', 'Choose Set Up Two-Factor Authentication.', 'Save your backup codes somewhere safe, like your password manager.'] },
+        { id: 'ig', title: 'Instagram', pts: 10, how: ['Open Settings, then Accounts Centre.', 'Go to Password and security, then Two-factor authentication.', 'Pick an authenticator app if you can.'] },
+        { id: 'tt', title: 'TikTok', pts: 10, how: ['Open Settings and privacy, then Security.', 'Turn on 2-step verification.', 'Add at least two ways to get your code.'] }
+      ]
+    },
+    {
+      group: 'Your logins',
+      items: [
+        { id: 'pm', title: 'Use a password manager', why: 'An app that makes and remembers a different strong password for every account.', pts: 20, how: ["We'd go with Bitwarden (free) or 1Password (paid).", 'Start with your email and your platform logins.', "Change any password you've used in more than one place."] },
+        { id: 'rec', title: 'Recovery email and phone are up to date', why: "So you can get back in if you're ever locked out.", pts: 10, how: ["Open each platform's security settings.", 'Check the recovery email is one you can still get into.', 'Add your current mobile number.'] },
+        { id: 'biz', title: 'A separate business email', why: 'One inbox for brand deals and logins, away from your personal email.', pts: 15, how: ['Make a new email only for your creator work.', 'Use it in your bios and for brand deals.', 'Turn on 2-step login for it too.'] }
+      ]
+    },
+    {
+      group: 'Your privacy',
+      items: [
+        { id: 'dox', title: 'Do a doxxing check', why: 'Doxxing is when someone shares your private details, like your home address, online.', pts: 15, how: ['Search your real name and your handle in a private browser window.', 'Check old posts and videos for your street, school or house number.', 'Turn off location tags on photos before you post.'] }
+      ]
+    }
+  ];
+  const ALL_CHECKS = CHECKS.flatMap((g) => g.items);
+
+  const PARTS = [
+    { part: 'Microphone', pick: 'Fifine AmpliGame AM8', price: 99, why: 'A dynamic mic, so it hears your voice and not your keyboard.' },
+    { part: 'Mic arm', pick: 'Low-profile boom arm', price: 45, why: 'Gets the mic close to your mouth and out of the shot.' },
+    { part: 'Webcam', pick: 'Logitech C920s', price: 119, why: 'A sharp full HD (1080p) camera for your face on stream. Twitch streams top out at 1080p, so skip 4K.' },
+    { part: 'Lighting', pick: 'Two small LED panels', price: 70, why: 'Soft light from the front does more for your picture than a pricier webcam.' },
+    { part: 'Stream controller', pick: 'Elgato Stream Deck Neo', price: 149, why: 'Buttons that switch scenes and mute your mic in one tap.' },
+    { part: 'Streaming program', pick: 'OBS Studio', price: 0, why: 'The free program that sends your stream to Twitch. We set it up for you.' }
+  ];
+
+  const CLIPS = [
+    { from: '14:32', to: '15:08', len: '36 sec', title: 'The microwave story', why: 'A big laugh in the first 3 seconds, which hooks people before they scroll.' },
+    { from: '31:05', to: '31:52', len: '47 sec', title: 'How to price your first brand deal', why: 'A clear tip people will save and share.' },
+    { from: '48:20', to: '48:51', len: '31 sec', title: "Don't buy gear before your 10th stream", why: 'A bold take that gets people talking in the comments.' },
+    { from: '1:02:10', to: '1:03:00', len: '50 sec', title: 'The worst brand deal we were offered', why: 'Comments on the full episode mention this moment the most.' }
+  ];
+
+  const TITLES = [
+    'I tested 3 budget mics. The cheapest one won',
+    'Best streaming mic under $100? I tested 3',
+    '3 budget mics, 1 clear winner (under $100)'
+  ];
+  const CAPTION = 'Three streaming mics, all under $100 AUD, tested on the same setup. The cheapest one surprised me. Which would you pick?\n\nFull parts list in the pinned comment.\n\n#streamingsetup #budgetmic #newstreamer';
+
+  /* ---------- State (in memory only, resets on reload) ---------- */
+  const state = {
+    email: 'alex@example.com',
+    metric: 'views',
+    tool: 'security',
+    connected: { youtube: true, twitch: true },
+    synced: { youtube: '2 hours ago', twitch: '2 hours ago' },
+    confirmDisconnect: null,
+    connecting: null,
+    twoStep: false,
+    checks: { yt: true, tw: true, rec: true }
+  };
+  const connectedIds = () => ['youtube', 'twitch'].filter((p) => state.connected[p]);
+  const share = (metric) => connectedIds().reduce((s, p) => s + SPLIT[metric][p], 0);
+  const score = () => ALL_CHECKS.reduce((s, c) => s + (state.checks[c.id] ? c.pts : 0), 0);
+
+  /* ---------- Routing ---------- */
+  const SCREENS = ['login', 'home', 'tools', 'settings'];
+  const TOOLS = ['security', 'setup', 'clips', 'captions'];
+
+  // Navigation doesn't rely on the address bar, so it also works where the hash can't change
+  // (some previews and sandboxes). When it can, the address updates so Back works.
+  let current = null;
+  function go(token) {
+    render(token);
+    try { if (location.hash.slice(1) !== token) history.pushState(null, '', `#${token}`); } catch (e) { /* stay on this address */ }
+  }
+  function fromAddress() {
+    const token = location.hash.slice(1) || 'login';
+    if (token !== current) render(token);
+  }
+  window.addEventListener('popstate', fromAddress);
+  window.addEventListener('hashchange', fromAddress);
+
+  function render(token) {
+    current = token;
+    let screen = token;
+    if (TOOLS.includes(token)) { screen = 'tools'; state.tool = token; }
+    if (!SCREENS.includes(screen)) screen = 'login';
+
+    $('#view-login').hidden = screen !== 'login';
+    $('#view-app').hidden = screen === 'login';
+    $$('[data-screen]').forEach((s) => { s.hidden = s.dataset.screen !== screen; });
+    $$('[data-nav]').forEach((a) => {
+      if (a.dataset.nav === screen) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+
+    if (screen === 'home') renderHome();
+    if (screen === 'tools') renderTools();
+    if (screen === 'settings') renderSettings();
+
+    $('#toast').classList.toggle('on-login', screen === 'login');
+    window.scrollTo(0, 0);
+    const h = $(`#title-${screen}`);
+    if (h) h.focus({ preventScroll: true });
+  }
+
+  /* ---------- Login ---------- */
+  $('#login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const val = $('#login-email').value.trim();
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    $('#login-error').hidden = ok;
+    $('#login-email').setAttribute('aria-invalid', String(!ok));
+    if (!ok) { $('#login-email').focus(); return; }
+    state.email = val;
+    $$('[data-email]').forEach((el) => { el.textContent = val; });
+    $('#login-notice').hidden = true;
+    go('home');
+  });
+  $('#login-google').addEventListener('click', () => {
+    $('#login-notice').hidden = true;
+    go('home');
+    toast('Preview only. No Google sign-in happened.');
+  });
+
+  /* ---------- Home ---------- */
+  function renderHome() {
+    const ids = connectedIds();
+    const none = ids.length === 0;
+    $('#home-stats').hidden = none;
+    $('#posts-card').hidden = none;
+    $('#home-empty').hidden = !none;
+
+    const missing = ['youtube', 'twitch'].filter((p) => !state.connected[p]);
+    const notice = $('#home-notice');
+    if (!none && missing.length) {
+      const gone = PLATFORMS.find((p) => p.id === missing[0]).name;
+      const left = PLATFORMS.find((p) => p.id === ids[0]).name;
+      notice.innerHTML = ic('i-alert') + `<span><b>${gone} isn't connected,</b> so these numbers only include ${left}. <a href="#settings">Reconnect in Settings</a></span>`;
+      notice.className = 'notice tone-caution';
+      notice.hidden = false;
+    } else notice.hidden = true;
+
+    $('#home-lead').textContent = none
+      ? "Connect a platform and we'll show your numbers here."
+      : state.connected.youtube
+        ? 'Your $600 setup video on 8 October brought in heaps of new viewers. Here are the numbers.'
+        : 'Here are your Twitch numbers for the last 28 days.';
+
+    if (!none) {
+      renderStats();
+      renderChart();
+      renderTable();
+      renderPosts();
+    }
+    renderPlatforms();
+    renderNextStep();
+  }
+
+  function renderStats() {
+    const ids = connectedIds();
+    const per = (metric) => ids.map((p) => ({ p, v: Math.round(SERIES[metric].reduce((a, b) => a + b, 0) * SPLIT[metric][p]) }));
+    const total = (rows) => rows.reduce((s, r) => s + r.v, 0);
+    const splitLine = (rows) => rows.length > 1 ? rows.map((r) => `${PLATFORMS.find((x) => x.id === r.p).name} ${fmt(r.v)}`).join(' · ') : `${PLATFORMS.find((x) => x.id === rows[0].p).name} only`;
+
+    const fol = ids.map((p) => ({ p, v: FOLLOWERS[p] }));
+    const newFol = total(per('followers'));
+    const views = per('views');
+    const hours = per('hours');
+
+    $('#stat-grid').innerHTML = [
+      { icon: 'i-users', label: 'Followers and subscribers', value: fmt(total(fol)), delta: delta(GROWTH.followers, `${fmt(newFol)} new in 28 days`), split: splitLine(fol) },
+      { icon: 'i-eye', label: 'Views', value: fmt(total(views)), delta: delta(GROWTH.views, 'on the 28 days before'), split: splitLine(views) },
+      { icon: 'i-clock', label: 'Watch time', note: 'Total hours people spent watching', value: fmt(total(hours)) + '<small>hours</small>', delta: delta(GROWTH.hours, 'on the 28 days before'), split: splitLine(hours) }
+    ].map((s) => `
+      <article class="card stat-card">
+        <div class="stat-top"><span class="icon-chip">${ic(s.icon)}</span><h2 class="stat-label">${s.label}</h2></div>
+        <p class="stat-value">${s.value}</p>
+        ${s.note ? `<p class="caption">${s.note}</p>` : ''}
+        <p class="stat-delta">${s.delta}</p>
+        <p class="stat-split">${s.split}</p>
+      </article>`).join('');
+  }
+
+  // Chart geometry kept between renders for the hover layer.
+  let geo = null;
+  let activeIndex = null;
+
+  function niceStep(raw) {
+    const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / pow;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * pow;
+  }
+  const tickLabel = (t) => t >= 1000 ? `${+(t / 1000).toFixed(1)}k` : String(t);
+
+  function chartData(metric) {
+    const s = share(metric);
+    return SERIES[metric].map((v) => Math.round(v * s));
+  }
+
+  function renderChart() {
+    const box = $('#chart');
+    const metric = state.metric;
+    const data = chartData(metric);
+    const W = Math.max(280, Math.round(box.clientWidth || 600));
+    const H = W < 560 ? 210 : 260;
+    const m = { t: 22, r: 10, b: 30, l: 44 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const max = Math.max(...data);
+    const step = niceStep(max / 3);
+    const top = Math.ceil(max / step) * step;
+    const x = (i) => m.l + i * iw / (data.length - 1);
+    const y = (v) => m.t + ih - (v / top) * ih;
+
+    let grid = '';
+    for (let t = 0; t <= top + 0.001; t += step) {
+      grid += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/>`;
+      grid += `<text class="tick" x="${m.l - 8}" y="${(y(t) + 4).toFixed(1)}" text-anchor="end">${tickLabel(t)}</text>`;
+    }
+    const xTicks = (W < 520 ? [0, 14, 27] : [0, 7, 14, 21, 27]).map((i) => {
+      const anchor = i === 0 ? 'start' : i === 27 ? 'end' : 'middle';
+      return `<text class="tick" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="${anchor}">${dayShort(DAYS[i])}</text>`;
+    }).join('');
+    const line = data.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+    const area = `${line} L${x(data.length - 1).toFixed(1)} ${y(0).toFixed(1)} L${x(0).toFixed(1)} ${y(0).toFixed(1)} Z`;
+
+    let marker = '';
+    if (state.connected.youtube) {
+      const mx = x(VIDEO_DAY).toFixed(1);
+      const anchor = W < 420 ? 'end' : 'start';
+      const lx = anchor === 'end' ? +mx - 6 : +mx + 6;
+      marker = `<line class="marker" x1="${mx}" x2="${mx}" y1="${m.t - 10}" y2="${y(0).toFixed(1)}"/>
+        <text class="marker-label" x="${lx}" y="${m.t - 2}" text-anchor="${anchor}">Setup video out</text>`;
+    }
+
+    const last = data.length - 1;
+    box.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" focusable="false">
+        <defs><linearGradient id="area-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" class="stop-a"/><stop offset="1" class="stop-b"/></linearGradient></defs>
+        ${grid}
+        <path d="${area}" fill="url(#area-fill)"/>
+        ${marker}
+        <path class="line" d="${line}"/>
+        <circle class="end-dot" cx="${x(last).toFixed(1)}" cy="${y(data[last]).toFixed(1)}" r="5"/>
+        ${xTicks}
+        <g id="hover" visibility="hidden">
+          <line class="hover-line" id="hover-line" x1="0" x2="0" y1="${m.t}" y2="${y(0).toFixed(1)}"/>
+          <circle class="hover-dot" id="hover-dot" cx="0" cy="0" r="6"/>
+        </g>
+      </svg>
+      <div class="tip" id="tip" hidden></div>`;
+
+    geo = { W, H, x, y, data, iw, m };
+    const best = data.indexOf(max);
+    const unit = METRICS[metric].unit;
+    box.setAttribute('aria-label', `Line chart of ${METRICS[metric].sub.toLowerCase()} from 23 September to 20 October 2026. Highest was ${fmt(max)} ${unit} on ${dayLong(DAYS[best])}. Use the left and right arrow keys to read each day.`);
+
+    const names = connectedIds().map((p) => PLATFORMS.find((x) => x.id === p).name);
+    $('#chart-sub').textContent = `${METRICS[metric].sub} ${names.length > 1 ? 'across' : 'on'} ${names.join(' and ')}`;
+    let insight = `Your best day was ${dayLong(DAYS[best])}, with ${fmt(max)} ${unit}.`;
+    if (metric === 'hours' && state.connected.youtube) insight += ` Watch time is down ${Math.abs(GROWTH.hours)}% on the 28 days before because more of your views came from Shorts, which are shorter. That's normal when Shorts take off.`;
+    else if (state.connected.youtube && (best === VIDEO_DAY || best === VIDEO_DAY + 1)) insight += ' That lines up with your setup video going up on 8 October. A follow-up video could keep the new viewers coming back.';
+    $('#chart-insight').innerHTML = ic('i-info') + `<span>${insight}</span>`;
+
+    $$('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.metric === metric)));
+    if (activeIndex !== null) showPoint(activeIndex);
+  }
+
+  function showPoint(i) {
+    if (!geo) return;
+    i = Math.max(0, Math.min(geo.data.length - 1, i));
+    activeIndex = i;
+    const svg = $('#chart svg');
+    const rect = svg.getBoundingClientRect();
+    const sx = rect.width / geo.W, sy = rect.height / geo.H;
+    const px = geo.x(i), py = geo.y(geo.data[i]);
+    $('#hover').setAttribute('visibility', 'visible');
+    $('#hover-line').setAttribute('x1', px); $('#hover-line').setAttribute('x2', px);
+    $('#hover-dot').setAttribute('cx', px); $('#hover-dot').setAttribute('cy', py);
+
+    const tip = $('#tip');
+    tip.innerHTML = `<b>${fmt(geo.data[i])} ${METRICS[state.metric].unit}</b><span>${dayLong(DAYS[i])}${i === VIDEO_DAY && state.connected.youtube ? ' · setup video out' : ''}</span>`;
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = px * sx - tw / 2;
+    left = Math.max(0, Math.min(rect.width - tw, left));
+    let topPos = py * sy - th - 14;
+    if (topPos < 0) topPos = py * sy + 14;
+    tip.style.left = `${left}px`;
+    tip.style.top = `${topPos}px`;
+  }
+  function hidePoint() {
+    activeIndex = null;
+    const h = $('#hover'); if (h) h.setAttribute('visibility', 'hidden');
+    const t = $('#tip'); if (t) t.hidden = true;
+  }
+  function indexFromEvent(e) {
+    const svg = $('#chart svg');
+    const rect = svg.getBoundingClientRect();
+    const vx = (e.clientX - rect.left) * (geo.W / rect.width);
+    return Math.round((vx - geo.m.l) / (geo.iw / (geo.data.length - 1)));
+  }
+  const chartEl = $('#chart');
+  chartEl.addEventListener('pointermove', (e) => { if (geo) showPoint(indexFromEvent(e)); });
+  chartEl.addEventListener('pointerdown', (e) => { if (geo) showPoint(indexFromEvent(e)); });
+  chartEl.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') hidePoint(); });
+  chartEl.addEventListener('keydown', (e) => {
+    if (!geo) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const start = activeIndex === null ? geo.data.length - 1 : activeIndex + (e.key === 'ArrowRight' ? 1 : -1);
+      showPoint(start);
+    } else if (e.key === 'Escape') hidePoint();
+  });
+  chartEl.addEventListener('blur', hidePoint);
+  $$('.seg button').forEach((b) => b.addEventListener('click', () => { state.metric = b.dataset.metric; renderChart(); }));
+
+  let resizeFrame;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => { if (!$('[data-screen="home"]').hidden && !$('#home-stats').hidden) renderChart(); });
+  });
+
+  function renderTable() {
+    const v = chartData('views'), h = chartData('hours'), f = chartData('followers');
+    $('#chart-table').innerHTML = `<thead><tr><th scope="col">Day</th><th scope="col">Views</th><th scope="col">Hours watched</th><th scope="col">New followers</th></tr></thead><tbody>` +
+      DAYS.map((d, i) => `<tr><td>${WEEKDAYS[d.getDay()].slice(0, 3)} ${dayShort(d)}</td><td>${fmt(v[i])}</td><td>${fmt(h[i])}</td><td>${fmt(f[i])}</td></tr>`).join('') + '</tbody>';
+  }
+
+  function renderPosts() {
+    const list = POSTS.filter((p) => state.connected[p.p]).sort((a, b) => b.views - a.views).slice(0, 5);
+    $('#posts').innerHTML = list.map((p, i) => {
+      const plat = PLATFORMS.find((x) => x.id === p.p);
+      return `<li>
+        <span class="rank">${i + 1}</span>
+        <div><p class="post-title">${esc(p.title)}</p><p class="post-meta">${ic(plat.icon, 'i-sm')}${p.type} · ${p.date}</p></div>
+        <p class="post-views"><b>${fmt(p.views)}</b><span>views</span></p>
+      </li>`;
+    }).join('');
+  }
+
+  function renderPlatforms() {
+    $('#platforms').innerHTML = PLATFORMS.map((p) => {
+      let status;
+      if (p.soon) status = '<span class="tag">Coming soon</span>';
+      else if (state.connected[p.id]) status = '';
+      else status = '<a class="text-link" href="#settings">Connect</a>';
+      const sub = p.soon ? "We're working on it"
+        : state.connected[p.id] ? `${ic('i-circle-check', 'i-sm ic-safe')}Connected · synced ${state.synced[p.id]}` : `${ic('i-alert', 'i-sm ic-caution')}Not connected`;
+      return `<li><span class="icon-chip">${ic(p.icon)}</span><div><b>${p.name}</b><span class="platform-status">${sub}</span></div>${status}</li>`;
+    }).join('');
+  }
+
+  function renderNextStep() {
+    const s = score();
+    const b = band(s);
+    $('#next-score').textContent = s;
+    $('#next-bar').style.width = `${s}%`;
+    $('#next-bar-wrap').className = `bar is-${b.tone}`;
+    $('#next-chip').className = `chip chip-${b.tone}`;
+    $('#next-chip').innerHTML = ic(b.icon) + b.label;
+    if (s === 100) {
+      $('#next-copy').textContent = "All sorted. Your accounts are in great shape. We'll remind you to check again in 3 months.";
+      $('#next-btn').textContent = 'See your checkup';
+    } else {
+      const fix = nextFix();
+      $('#next-copy').textContent = s < 40
+        ? 'Most hacks start with one reused password. Our 5-minute checkup shows what to fix first.'
+        : `Nice progress. Next up: ${fix.title.charAt(0).toLowerCase() + fix.title.slice(1)}.`;
+      $('#next-btn').textContent = s < 40 ? 'Start your security checkup' : 'Keep going with your checkup';
+    }
+  }
+
+  /* ---------- Tools ---------- */
+  function nextFix() {
+    return ALL_CHECKS.filter((c) => !state.checks[c.id]).sort((a, b) => b.pts - a.pts)[0];
+  }
+
+  function renderTools() {
+    $$('.tile').forEach((t) => t.setAttribute('aria-pressed', String(t.dataset.tool === state.tool)));
+    $$('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== state.tool; });
+    renderScore();
+  }
+
+  $$('.tile').forEach((t) => t.addEventListener('click', () => {
+    state.tool = t.dataset.tool;
+    current = state.tool;
+    try { history.replaceState(null, '', `#${state.tool}`); } catch (e) { /* hash stays as is */ }
+    renderTools();
+    if (window.innerWidth < 900) $(`#panel-${state.tool}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+
+  function buildChecks() {
+    $('#check-groups').innerHTML = CHECKS.map((g) => `
+      <div class="check-group">
+        <h3>${g.group}</h3>
+        ${g.intro ? `<p>${g.intro}</p>` : ''}
+        <ul class="checks">
+          ${g.items.map((c) => `
+            <li class="check-item">
+              <label class="check-row" for="chk-${c.id}">
+                <input class="check" type="checkbox" id="chk-${c.id}" data-check="${c.id}" ${state.checks[c.id] ? 'checked' : ''}>
+                <span><b>${esc(c.title)}</b>${c.why ? `<span class="why">${esc(c.why)}</span>` : ''}</span>
+                <span class="pts">${ptsLabel(c)}</span>
+              </label>
+              <details class="more how">
+                <summary>Show me how ${ic('i-chevron', 'i-sm')}</summary>
+                <ol>${c.how.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
+              </details>
+            </li>`).join('')}
+        </ul>
+      </div>`).join('');
+    $$('[data-check]').forEach((box) => box.addEventListener('change', () => {
+      state.checks[box.dataset.check] = box.checked;
+      box.closest('.check-row').querySelector('.pts').innerHTML = ptsLabel(ALL_CHECKS.find((c) => c.id === box.dataset.check));
+      renderScore();
+    }));
+  }
+  const ptsLabel = (c) => state.checks[c.id] ? chip('safe', 'i-check', 'Done') : `${c.pts} pts`;
+
+  function renderScore() {
+    const s = score();
+    const C = 326.73;
+    $('#ring-fill').setAttribute('stroke-dashoffset', (C * (1 - s / 100)).toFixed(1));
+    $('#ring-num').textContent = s;
+    const b = band(s);
+    $('#ring').setAttribute('aria-label', `Security score ${s} out of 100, ${b.label.toLowerCase()}`);
+    $('#ring').className = `ring is-${b.tone}`;
+    $('#score-chip').className = `chip chip-${b.tone}`;
+    $('#score-chip').innerHTML = ic(b.icon) + b.label;
+    $('#tile-score').innerHTML = `${chip(b.tone, b.icon, b.label)}<span>Score ${s} of 100</span>`;
+    let title, copy;
+    if (s < 40) { title = "Let's lock things down"; copy = "No stress, most creators start here. Fix the top one and you'll be safer straight away."; }
+    else if (s < 80) { title = 'Getting there'; copy = "You've got the basics covered. A couple more and you'll be ahead of most creators."; }
+    else if (s < 100) { title = 'Nearly sorted'; copy = 'Your accounts are in good shape. Finish the last few to close the gaps.'; }
+    else { title = 'All sorted'; copy = "Nice work. Your accounts are well protected. We'd check again every 3 months."; }
+    $('#score-title').textContent = title;
+    $('#score-copy').textContent = copy;
+    const fix = nextFix();
+    $('#next-fix').innerHTML = fix ? ic('i-arrow') + `<span><b>Next best fix:</b> ${esc(fix.title)} (+${fix.pts} points)</span>` : '';
+    $('#next-fix').hidden = !fix;
+  }
+
+  function buildMocks() {
+    $('#parts').innerHTML = PARTS.map((p) => `
+      <li><span class="part">${p.part}</span><b>${esc(p.pick)}</b><span class="price">${p.price ? '$' + p.price : 'Free'}</span><span class="why">${esc(p.why)}</span></li>`).join('');
+    $('#parts-total').textContent = '$' + fmt(PARTS.reduce((s, p) => s + p.price, 0));
+
+    $('#clips').innerHTML = CLIPS.map((c, i) => `
+      <li class="clip">
+        <div>
+          <p class="clip-time"><span>Clip ${i + 1}</span><span>${c.from} to ${c.to}</span><span>${c.len}</span></p>
+          <b>${esc(c.title)}</b>
+          <p class="why">${esc(c.why)}</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" type="button" data-toast="Clip previews play here in the real tool.">${ic('i-play', 'i-sm')}Preview</button>
+      </li>`).join('');
+
+    $('#titles').innerHTML = TITLES.map((t, i) => `
+      <li class="title-opt">
+        <p id="title-opt-${i}">${esc(t)}</p>
+        <button class="copy-btn" type="button" data-copy-from="title-opt-${i}" aria-label="Copy title ${i + 1}">${ic('i-copy', 'i-sm')}Copy</button>
+        <span class="count">${t.length} of 100 characters</span>
+      </li>`).join('');
+    $('#caption-text').textContent = CAPTION;
+  }
+
+  $('#setup-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const btn = e.submitter || $('#setup-form button');
+    fakeRun(btn, () => { flash($('#setup-result')); toast("Here's a sample result. The real tool will match your choices."); });
+  });
+  $('#clips-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const btn = e.submitter || $('#clips-form button');
+    fakeRun(btn, () => { flash($('#clips-result')); toast("Here's a sample result. The real tool will watch your video."); });
+  });
+  $('#captions-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const btn = e.submitter || $('#captions-form button');
+    fakeRun(btn, () => { flash($('#captions-result')); toast("Here's a sample result. The real tool will use what you typed."); });
+  });
+
+  function copyText(text) {
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+      toast(ok ? 'Copied' : "Couldn't copy here. Select the text and copy it yourself.", ok ? 'safe' : 'caution');
+    };
+    try {
+      navigator.clipboard.writeText(text).then(() => toast('Copied', 'safe'), fallback);
+    } catch (e) { fallback(); }
+  }
+
+  /* ---------- Settings ---------- */
+  function renderSettings() {
+    $('#conn').innerHTML = PLATFORMS.map((p) => {
+      const plat = `<span class="icon-chip">${ic(p.icon)}</span>`;
+      if (p.soon) {
+        return `<li><div class="conn-row">${plat}<div><b>${p.name}</b><span class="caption">We're working on it. Until then, check Insights or Analytics in the app.</span></div><span class="tag">Coming soon</span></div></li>`;
+      }
+      if (state.connecting === p.id) {
+        return `<li><div class="conn-row">${plat}<div><b>${p.name}</b><span class="caption">Connecting…</span></div><button class="btn btn-purple btn-sm" type="button" disabled>Connecting…</button></div></li>`;
+      }
+      if (!state.connected[p.id]) {
+        return `<li><div class="conn-row">${plat}<div><b>${p.name}</b><span class="caption">${chip('caution', 'i-alert', 'Not connected')}</span></div><button class="btn btn-purple btn-sm" type="button" data-act="connect" data-id="${p.id}">${ic('i-link', 'i-sm')}Connect</button></div></li>`;
+      }
+      const confirm = state.confirmDisconnect === p.id ? `
+        <div class="tone-panel tone-caution" role="group" aria-label="Confirm disconnect ${p.name}">
+          <p>${ic('i-alert')}<span><b>Disconnect ${p.name}?</b> We'll stop pulling your ${p.name} stats, so they'll drop off your dashboard. You can reconnect any time.</span></p>
+          <div class="actions">
+            <button class="btn btn-danger-ghost btn-sm" type="button" data-act="yes" data-id="${p.id}">${ic('i-unlink', 'i-sm')}Yes, disconnect</button>
+            <button class="btn btn-ghost btn-sm" type="button" data-act="no" data-id="${p.id}">Keep it connected</button>
+          </div>
+        </div>` : '';
+      return `<li>
+        <div class="conn-row">${plat}
+          <div><b>${p.name} · ${esc(p.account)}</b><span class="caption platform-status">${ic('i-circle-check', 'i-sm ic-safe')}<span>Connected since ${p.since} · synced ${state.synced[p.id]}</span></span></div>
+          ${state.confirmDisconnect === p.id ? '' : `<button class="btn btn-ghost btn-sm" type="button" data-act="ask" data-id="${p.id}">${ic('i-unlink', 'i-sm')}Disconnect</button>`}
+        </div>${confirm}
+      </li>`;
+    }).join('');
+    $('#twostep').setAttribute('aria-checked', String(state.twoStep));
+    $('#twostep-on').hidden = !state.twoStep;
+    $('#twostep-off').hidden = state.twoStep;
+  }
+
+  $('#conn').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const id = b.dataset.id;
+    const name = PLATFORMS.find((p) => p.id === id).name;
+    const act = b.dataset.act;
+    if (act === 'ask') state.confirmDisconnect = id;
+    if (act === 'no') state.confirmDisconnect = null;
+    if (act === 'yes') {
+      state.connected[id] = false;
+      state.confirmDisconnect = null;
+      toast(`${name} disconnected. Your dashboard now leaves it out.`, 'caution');
+    }
+    if (act === 'connect') {
+      state.connecting = id;
+      setTimeout(() => {
+        state.connecting = null;
+        state.connected[id] = true;
+        state.synced[id] = 'just now';
+        renderSettings();
+        toast(`${name} connected. In the real app, ${name} asks you to approve this first.`, 'safe');
+      }, 1000);
+    }
+    renderSettings();
+    const again = $(`#conn [data-id="${id}"]`);
+    if (again && act !== 'connect') again.focus();
+  });
+
+  $('#twostep').addEventListener('click', () => {
+    state.twoStep = !state.twoStep;
+    renderSettings();
+    toast(state.twoStep ? '2-step login is on.' : '2-step login is off. We recommend turning it back on.', state.twoStep ? 'safe' : 'caution');
+  });
+
+  $('#delete-btn').addEventListener('click', () => {
+    $('#delete-start').hidden = true;
+    $('#delete-confirm').hidden = false;
+    $('#delete-no').focus();
+  });
+  $('#delete-no').addEventListener('click', () => {
+    $('#delete-confirm').hidden = true;
+    $('#delete-start').hidden = false;
+    $('#delete-btn').focus();
+  });
+  $('#delete-yes').addEventListener('click', () => {
+    $('#delete-confirm').hidden = true;
+    $('#delete-start').hidden = false;
+    Object.assign(state, { connected: { youtube: true, twitch: true }, synced: { youtube: '2 hours ago', twitch: '2 hours ago' }, twoStep: false, checks: { yt: true, tw: true, rec: true } });
+    buildChecks();
+    const n = $('#login-notice');
+    n.innerHTML = ic('i-info') + "<span>Your account is deleted. This is a preview, so nothing was really deleted. If something wasn't working for you, we'd love to hear why.</span>";
+    n.hidden = false;
+    go('login');
+  });
+
+  /* ---------- Shared clicks ---------- */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-toast]');
+    if (t) toast(t.dataset.toast);
+    const c = e.target.closest('[data-copy-from]');
+    if (c) copyText($('#' + c.dataset.copyFrom).textContent);
+    const link = e.target.closest('a[href^="#"]');
+    if (link) {
+      const token = link.getAttribute('href').slice(1);
+      if (SCREENS.includes(token) || TOOLS.includes(token)) {
+        e.preventDefault();
+        if (link.hasAttribute('data-logout')) $('#login-notice').hidden = true;
+        go(token);
+        if (link.hasAttribute('data-logout')) toast("You're logged out.");
+      }
+    }
+  });
+
+  /* ---------- Start ---------- */
+  buildChecks();
+  buildMocks();
+  fromAddress();
+})();
+</script>
+</body>
+</html>

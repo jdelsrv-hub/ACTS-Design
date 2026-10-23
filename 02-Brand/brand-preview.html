@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>acTS Brand Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--night:#16112A;--purple:#6C3FE0;--green:#2FD47F;--lilac:#CBBDF7;--mint:#DCF7E9;--deepgreen:#0F7A4A;--ink:#1D1A2B;--slate:#5F5B73;--paper:#F8F7FC;--white:#FFFFFF;--amber:#FFC857;--red:#FF6B70;--deepamber:#8A5300;--deepred:#B42335;--butter:#FFF3D1;--blush:#FDE7E8}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,Arial,sans-serif;color:var(--ink);background:var(--paper);line-height:1.5}
+  h1,h2,h3{font-family:"Space Grotesk",Arial,sans-serif;line-height:1.15;margin:0 0 12px}
+  h2{font-size:28px;margin-top:8px}
+  section{padding:48px 24px;max-width:1040px;margin:0 auto}
+  .hero{background:linear-gradient(135deg,var(--purple),var(--night) 70%);color:var(--white);padding:72px 24px}
+  .hero-inner{max-width:1040px;margin:0 auto}
+  .wordmark{font-family:"Space Grotesk",Arial,sans-serif;letter-spacing:-0.02em;line-height:1}
+  .wordmark .ac{font-weight:500}.wordmark .ts{font-weight:700}
+  .on-dark .ac{color:var(--lilac)}.on-dark .ts{color:var(--green)}
+  .on-light .ac{color:var(--purple)}.on-light .ts{color:var(--ink)}
+  .mono-white span{color:var(--white)}
+  .big{font-size:120px}
+  .sub{font-size:22px;color:var(--lilac);margin-top:8px;font-weight:600}
+  .tag{font-family:"Space Grotesk",Arial,sans-serif;font-size:36px;margin-top:32px}
+  .tag b{color:var(--green)}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .swatch{border-radius:12px;overflow:hidden;border:1px solid #e4e1ee;background:var(--white)}
+  .chip{height:96px}
+  .swatch p{margin:0;padding:10px 12px;font-size:13px}
+  .swatch code{font-family:"JetBrains Mono",Consolas,monospace;color:var(--slate)}
+  .logos{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .logo-card{border-radius:12px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:180px}
+  .logo-card small{font-family:Inter,Arial,sans-serif;font-weight:600;font-size:13px}
+  .type-row{border-bottom:1px solid #e4e1ee;padding:16px 0}
+  .type-row span{font-size:13px;color:var(--slate);display:block}
+  .dark-panel{background:var(--night);color:var(--white);border-radius:12px;padding:32px}
+  .btn{display:inline-block;padding:12px 22px;border-radius:12px;font-weight:600;margin:8px 8px 0 0;text-decoration:none}
+  .btn-green{background:var(--green);color:var(--night)}
+  .btn-purple{background:var(--purple);color:var(--white)}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(203,189,247,.15);color:var(--lilac);border-radius:999px;padding:6px 14px;font-size:13px;margin-top:16px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--green)}
+  .tip{background:var(--mint);border-radius:12px;padding:16px 20px;margin-top:16px}
+  .tip b{color:var(--deepgreen)}
+  .cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:24px}
+  .card{background:#221a3d;border-radius:12px;padding:24px}
+  .card h3{font-size:20px;color:var(--white)}
+  .card p{color:var(--lilac);margin:0;font-size:15px}
+  h3.sub-head{font-size:18px;margin:32px 0 6px}
+  .note{font-size:14px;color:var(--slate);margin:0 0 16px;max-width:640px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+  .status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600}
+  .status svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .s-safe{background:rgba(47,212,127,.14);color:var(--green)}
+  .s-caution{background:rgba(255,200,87,.14);color:var(--amber)}
+  .s-danger{background:rgba(255,107,112,.14);color:var(--red)}
+  .btn-red{background:var(--red);color:var(--night)}
+  .tips{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:16px}
+  .tips .tip{margin-top:0}
+  .tip.caution{background:var(--butter)}.tip.caution b{color:var(--deepamber)}
+  .tip.danger{background:var(--blush)}.tip.danger b{color:var(--deepred)}
+  @media (max-width:600px){.big{font-size:72px}.tag{font-size:26px}}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="wordmark on-dark big"><span class="ac">ac</span><span class="ts">TS</span></div>
+      <div class="sub">All Creative Technology Solutions</div>
+      <div class="tag">You create. <b>We sort the tech.</b></div>
+      <div class="pill"><span class="dot"></span>Brand preview · draft v1.0</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Logo</h2>
+    <div class="logos">
+      <div class="logo-card" style="background:var(--night)"><div class="wordmark on-dark" style="font-size:64px"><span class="ac">ac</span><span class="ts">TS</span></div><small style="color:var(--lilac)">On dark (main)</small></div>
+      <div class="logo-card" style="background:var(--white);border:1px solid #e4e1ee"><div class="wordmark on-light" style="font-size:64px"><span class="ac">ac</span><span class="ts">TS</span></div><small style="color:var(--slate)">On light</small></div>
+      <div class="logo-card" style="background:var(--purple)"><div class="wordmark mono-white" style="font-size:64px"><span class="ac">ac</span><span class="ts">TS</span></div><small style="color:var(--white)">One colour</small></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Colours</h2>
+    <div class="grid">
+      <div class="swatch"><div class="chip" style="background:#16112A"></div><p><b>Night</b><br><code>#16112A</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#6C3FE0"></div><p><b>Studio Purple</b><br><code>#6C3FE0</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#2FD47F"></div><p><b>Signal Green</b><br><code>#2FD47F</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#CBBDF7"></div><p><b>Lilac</b><br><code>#CBBDF7</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#DCF7E9"></div><p><b>Mint</b><br><code>#DCF7E9</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#0F7A4A"></div><p><b>Deep Green</b><br><code>#0F7A4A</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#1D1A2B"></div><p><b>Ink</b><br><code>#1D1A2B</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#5F5B73"></div><p><b>Slate</b><br><code>#5F5B73</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#F8F7FC;border-bottom:1px solid #e4e1ee"></div><p><b>Paper</b><br><code>#F8F7FC</code></p></div>
+    </div>
+
+    <h3 class="sub-head">Status colours</h3>
+    <p class="note">For states only: safe, caution and danger. Always shown with an icon and a word. The bright ones go on dark, the deep ones on light, and the soft ones are panels on light. Safe uses Signal Green, Deep Green and Mint from above.</p>
+    <div class="grid">
+      <div class="swatch"><div class="chip" style="background:#FFC857"></div><p><b>Caution Amber</b><br><code>#FFC857</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#FF6B70"></div><p><b>Alert Red</b><br><code>#FF6B70</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#8A5300"></div><p><b>Deep Amber</b><br><code>#8A5300</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#B42335"></div><p><b>Deep Red</b><br><code>#B42335</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#FFF3D1;border-bottom:1px solid #e4e1ee"></div><p><b>Butter</b><br><code>#FFF3D1</code></p></div>
+      <div class="swatch"><div class="chip" style="background:#FDE7E8;border-bottom:1px solid #e4e1ee"></div><p><b>Blush</b><br><code>#FDE7E8</code></p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Type</h2>
+    <div class="type-row"><h1 style="font-size:48px">Get your setup sorted</h1><span>Space Grotesk Bold · headings</span></div>
+    <div class="type-row"><p style="font-size:18px;margin:0">New to streaming? We'll build you a setup that looks and sounds great without blowing your budget.</p><span>Inter Regular · body</span></div>
+    <div class="type-row"><code style="font-family:'JetBrains Mono',Consolas,monospace;font-size:15px">Bitrate: 6000 kbps · Encoder: NVENC</code><span>JetBrains Mono · tech details</span></div>
+  </section>
+
+  <section>
+    <h2>In use</h2>
+    <div class="dark-panel">
+      <div class="pill" style="margin-top:0"><span class="dot"></span>Now booking</div>
+      <h1 style="font-size:40px;margin-top:16px">Less troubleshooting.<br><span style="color:var(--green)">More creating.</span></h1>
+      <p style="color:var(--lilac);max-width:560px">Setups, clips, ads and online safety for creators. Sydney based, helping creators anywhere.</p>
+      <a class="btn btn-green" href="#">Book a free 15-minute chat</a><a class="btn btn-purple" href="#">See what's included</a>
+      <div class="cards">
+        <div class="card"><h3>Starter setups</h3><p>A parts list matched to your budget, plus a setup session.</p></div>
+        <div class="card"><h3>Clipping</h3><p>Your best moments, captioned and ready to post.</p></div>
+        <div class="card"><h3>Safety packs</h3><p>Easy guides to keep your accounts and privacy safe.</p></div>
+      </div>
+      <div class="chips">
+        <span class="status s-safe"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Connected</span>
+        <span class="status s-caution"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Some gaps</span>
+        <span class="status s-danger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16h.01"/><path d="M12 8v4"/><path d="M15.31 2a2 2 0 0 1 1.42.59l4.68 4.68a2 2 0 0 1 .59 1.42v6.62a2 2 0 0 1-.59 1.42l-4.68 4.68a2 2 0 0 1-1.42.59H8.69a2 2 0 0 1-1.42-.59l-4.68-4.68A2 2 0 0 1 2 15.31V8.69a2 2 0 0 1 .59-1.42l4.68-4.68A2 2 0 0 1 8.69 2z"/></svg>At risk</span>
+      </div>
+      <a class="btn btn-red" href="#">Yes, delete my account</a>
+    </div>
+    <div class="tips">
+      <div class="tip"><b>Tip:</b> Most hacks start with one reused password. Turning on two-step login takes about 5 minutes.</div>
+      <div class="tip caution"><b>Heads up:</b> YouTube isn't connected, so these numbers only include Twitch.</div>
+      <div class="tip danger"><b>Can't be undone:</b> deleting your account removes your dashboard and checkup results.</div>
+    </div>
+  </section>
+</body>
+</html>

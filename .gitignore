@@ -1,0 +1,29 @@
+# Files Git doesn't track in the acTS workspace. Big video and audio stay out of Git:
+# keep them in Assets/ and back them up separately (for example an external drive or cloud storage).
+
+# Raw footage and recordings. The folders stay, through their _about.txt.
+Assets/Video/*
+Assets/Recordings/*
+!Assets/Video/_about.txt
+!Assets/Recordings/_about.txt
+
+# Video and audio anywhere else
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+
+# Windows, Office and tool clutter
+Thumbs.db
+desktop.ini
+~$*
+__pycache__/
+node_modules/
+.wrangler/
+.claude/settings.local.json
