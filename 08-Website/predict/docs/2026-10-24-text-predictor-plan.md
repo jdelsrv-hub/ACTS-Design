@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** An installable, offline web app that suggests the next word for one person on a touchscreen, learns their words, phrases and spelling slips, speaks text aloud, and blends in a small in-browser AI model.
+**Goal:** An installable, offline web app that suggests the next word for one person on a touchscreen, learns their words, phrases and spelling slips and speaks text aloud.
 
-**Architecture:** Vanilla ES modules with no build step. Pure engine modules (`text`, `wordlist`, `memory`, `spelling`, `mixer`, `backup`) hold all the logic and are unit-tested in the browser. `app.js` wires them to the DOM. The AI runs in a module Web Worker using Transformers.js and only re-ranks candidate words. A service worker gives offline use.
+**Architecture:** Vanilla ES modules with no build step. Pure engine modules (`text`, `wordlist`, `memory`, `spelling`, `mixer`, `backup`) hold all the logic and are unit-tested in the browser. `app.js` wires them to the DOM. A service worker gives offline use.
 
-**Tech stack:** HTML, CSS, JavaScript (ES2022 modules); Transformers.js 4.3.1 (vendored `transformers.web.min.js`); double-metaphone 2.0.1 (vendored, MIT); IndexedDB; Web Speech, Clipboard and Web Share APIs; Python 3 dev server (as in `08-Website/tools`). No Node on this machine: tests run in the browser.
+**Tech stack:** HTML, CSS, JavaScript (ES2022 modules); double-metaphone 2.0.1 (vendored, MIT); IndexedDB; Web Speech and Clipboard APIs; Python 3 dev server (as in `08-Website/tools`). No Node on this machine: tests run in the browser.
 
 **Spec:** `08-Website/predict/docs/2026-10-24-text-predictor-design.md`
 
@@ -14,21 +14,21 @@
 
 - All paths below are relative to `08-Website/predict/`. Run commands from there unless they say otherwise.
 - No framework, no bundler, no npm. Third-party code is vendored into `js/vendor/` at a pinned version, with its licence beside it.
-- Nothing the person types leaves the device. The only network fetches are the app files, the model files from Hugging Face, and the ONNX runtime WASM from cdn.jsdelivr.net.
-- Personal-memory suggestions within 50 ms of a keystroke. The AI refinement runs after a 250 ms pause, and is switched off when the median run goes over 400 ms.
-- Learning happens only on Speak, Copy or Send, and never while learning is paused.
+- Nothing the person types leaves the device. The only network fetches are the app files and the Atkinson Hyperlegible font from Google Fonts.
+- Suggestions within 50 ms of a keystroke.
+- Learning happens only on Speak or Copy, and never while learning is paused.
 - Recency half-life of 30 days. Personal weight = min(0.8, n / (n + 500)).
-- Caps: 50,000 words, 200,000 n-grams, 2,000 phrases, 20 recent sentences.
+- 20 recent sentences. No other size caps in v1.
 - Targets of at least 48 px (suggestion buttons at least 56 px tall with gaps of 6 px or more). Contrast WCAG AA normally and AAA in high contrast. Every control has an accessible name.
 - UI copy: sentence case, plain words, no "please", no exclamation marks. Errors say what happened, then what to do.
-- Commits: end each message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`, then `git push`.
+- Commits: end each message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Implementers commit only; the controller pushes.
 
 ## Review focus
 
 1. **Capitalisation:** "i" must show as "I". A name learned as "Maria" shows as "Maria". A word at the start of a sentence is capitalised when inserted, and that doesn't teach a capitalised form for ordinary words like "The". Tests are in Task 1 (`applySuggestion`) and Task 3 (`display`).
 2. **Punctuation, apostrophes, numbers and emoji:** "don't" and "it's" are single words. Numbers, emoji and punctuation are never learned as words and never break suggestions. Tests are in Task 1 (`tokenize`).
 3. **Cursor in the middle of the text:** choosing a suggestion replaces the word at the cursor, not the last word. Test in Task 1 (`applySuggestion`).
-4. **Speak, then Copy or Send the same sentence, or Speak it three times:** it's learned once. Test in Task 1 (`shouldLearn`).
+4. **Speak, then Copy the same sentence, or Speak it three times:** it's learned once. Test in Task 1 (`shouldLearn`).
 5. **Empty or whitespace-only Speak or Copy:** nothing is learned, nothing breaks. Tests in Task 1 (`shouldLearn`) and Task 3 (`commit`).
 
 ---
@@ -142,7 +142,7 @@ Expected after implementing: all tests pass.
   - `addStarterWords(words: string[])`, which sets count to max(count, 3) and keeps the casing as typed.
   - `paused: boolean` (get and set), `committedWords: number` (get), `recent(): string[]`.
 - Snapshot (this task defines its shape; Task 4 adds validation):
-  `{version: 1, words: {[key]: {count, lastUsed, display?}}, ngrams: {['a b' | 'a b c']: {count, lastUsed}}, phrases: {[text]: {count, lastUsed, pinned, offered}}, slips: {[typed]: {[word]: count}}, blocked: string[], penalties: {['prev word']: count}, recent: string[], stats: {taps, chars}, committedWords: number}`. `memory.toJSON()` returns it.
+  `{version: 1, words: {[key]: {count, lastUsed, display?}}, ngrams: {['a b' | 'a b c']: {count, lastUsed}}, phrases: {[text]: {count, lastUsed, pinned, offered}}, slips: {[typed]: {[word]: count}}, blocked: string[], penalties: {['prev word']: count}, recent: string[], committedWords: number}`. `memory.toJSON()` returns it.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -180,7 +180,7 @@ The display-casing test reflects the decided rule: the last non-sentence-start c
 
 - [ ] **Step 3: Commit** ("Predictor: personal memory learning and scoring")
 
-### Task 4: Memory controls, slips, caps and backup
+### Task 4: Memory controls, slips and backup
 
 **Files:**
 - Modify: `js/memory.js`
@@ -195,9 +195,8 @@ The display-casing test reflects the decided rule: the last non-sentence-start c
   - `deleteWord(key)`, which also removes its n-grams, and `deletePhrase(text)`.
   - `pinPhrase(text)`, `unpinPhrase(text)`, and `pinned(): string[]` (in pin order).
   - `phrases(): Array<{text, count, pinned}>` and `words(): Array<{key, display, count}>`, for the "What it has learned" page.
-  - `recordStats(taps: number, chars: number)` and `savings(): number | null`, equal to `1 - taps / chars` (null when chars is 0).
-  - `clearLearned()`, which empties everything except `stats` and `paused`.
-  - Pruning: after a commit, if a map is over its cap (`MAX_WORDS = 50000`, `MAX_NGRAMS = 200000`, `MAX_PHRASES = 2000`), remove the lowest decayed counts until it's at 90% of the cap. Pinned phrases are never removed.
+  - `clearLearned()`, which empties everything except `paused`.
+  - No size caps in v1. Leave one comment: `// shortcut: no size caps, add pruning if memory ever slows start-up`.
 - Produces, `js/backup.js`:
   - `makeBackup(memory: Memory, settings: object): string`, giving JSON `{app: 'acts-predict', version: 1, savedAt, memory: memory.toJSON(), settings}`.
   - `readBackup(text: string): {memory: Snapshot, settings: object} | null`, which returns null for bad JSON, the wrong `app` or `version`, or a snapshot that fails validation.
@@ -210,17 +209,13 @@ test('slips ranked', () => { const m = createMemory(); m.recordSlip('becuz', 'be
 test('penalty lowers score', () => { const m = createMemory(); m.commit('the cat', T); const before = m.score(['the'], 'cat', T); m.penalize('the', 'cat'); near(m.score(['the'], 'cat', T), before / 2); });
 test('blocked', () => { const m = createMemory(); m.block('darn'); ok(m.isBlocked('darn')); m.unblock('darn'); ok(!m.isBlocked('darn')); });
 test('deleteWord removes its ngrams', () => { const m = createMemory(); m.commit('see you', T); m.commit('see you', T); m.deleteWord('you'); eq(m.followers(['see'], 5), []); });
-test('savings', () => { const m = createMemory(); eq(m.savings(), null); m.recordStats(6, 10); near(m.savings(), 0.4); });
-test('prune keeps pinned phrases', () => { /* commit MAX_PHRASES + 1 distinct phrases with the first pinned; expect phrases().length <= MAX_PHRASES and the pinned one still present */ });
 test('backup round trip', () => { const m = createMemory(); m.commit('hi Maria', T); const r = readBackup(makeBackup(m, {textSize: 'huge'})); eq(r.settings.textSize, 'huge'); eq(createMemory(r.memory).display('maria'), 'Maria'); });
 test('corrupt backup refused', () => { eq(readBackup('{oops'), null); eq(readBackup('{"app":"other","version":1}'), null); eq(readBackup(JSON.stringify({app: 'acts-predict', version: 1, memory: {version: 1, words: []}})), null); });
 ```
 
-The prune test body is described in its comment. Write it with a loop, and export `MAX_PHRASES` so the test can use it.
-
 - [ ] **Step 2: Check that they fail, then implement, then reload. Expected: all pass, including Tasks 1–3**
 
-- [ ] **Step 3: Commit** ("Predictor: memory controls, caps and backup")
+- [ ] **Step 3: Commit** ("Predictor: memory controls and backup")
 
 ### Task 5: Spelling matcher
 
@@ -236,7 +231,7 @@ The prune test body is described in its comment. Write it with a loop, and expor
   - `createMatcher(words: Iterable<string>): Matcher`, which indexes by first letter and by the first character of each metaphone code.
   - `matcher.add(word: string)`
   - `matcher.has(word: string): boolean`
-  - `matcher.candidates(partial: string, slipsFor: (typed) => Array<{word, count}>, limit = 300): Array<{word, kind: 'slip' | 'prefix' | 'sound' | 'typo', weight: number}>`. Weights: slip 1, prefix 1, sound 0.6, typo at distance ≤ 1 gives 0.5, typo at distance ≤ 2 gives 0.25. Sound and typo matching only run when `partial.length >= 2` (sound needs ≥ 3). A sound match is when a word's primary or secondary code starts with the partial's primary code. A typo match uses distance to the word's prefix of length `partial.length` (and ±1). Each word appears once, with its best kind. Order: weight descending, then kind order slip > prefix > sound > typo.
+  - `matcher.candidates(partial: string, slipsFor: (typed) => Array<{word, count}>, limit = 300): Array<{word, kind: 'slip' | 'prefix' | 'sound' | 'typo', weight: number}>`. Weights: slip 1, prefix 1, sound 0.6, typo at distance ≤ 1 gives 0.5, typo at distance ≤ 2 gives 0.25. Typo matching allows distance ≤ 1 when `partial.length` is 2–4 and ≤ 2 when it's 5 or more; sound matching needs `partial.length >= 3`. A sound match is when a word's primary or secondary code starts with the partial's primary code. A typo match uses distance to the word's prefix of length `partial.length` (and ±1). Each word appears once, with its best kind. Order: weight descending, then kind order slip > prefix > sound > typo.
   - `matcher.suggestFix(word: string, slipsFor, rank: (w) => number): string | null`. Returns null if `has(word)`. Otherwise it returns the top slip, or the best non-prefix candidate with weight ≥ 0.5 (ties broken by `rank`), or null.
 
 - [ ] **Step 1: Write the failing tests**
@@ -246,11 +241,16 @@ const m = createMatcher(['phone', 'night', 'hello', 'help', 'because', 'wednesda
 const none = () => [];
 const kinds = (p) => Object.fromEntries(m.candidates(p, none).map(c => [c.word, c.kind]));
 test('prefix', () => eq(kinds('hel'), {hello: 'prefix', help: 'prefix'}));
-test('sounds like', () => { eq(kinds('fone').phone, 'sound'); eq(kinds('nite').night, 'sound'); eq(kinds('wensday').wednesday, 'sound'); });
-test('neighbour-key typo', () => eq(kinds('hwllo').hello, 'typo'));
+test('sounds like', () => { eq(kinds('fone').phone, 'sound'); eq(kinds('nite').night, 'sound'); });
+test('neighbour-key typo', () => eq(kinds('hrllo').hello, 'typo'));
 test('neighbour substitution is cheaper', () => ok(editDistance('hwllo', 'hello') < editDistance('hzllo', 'hello')));
 test('learned slip wins', () => { const c = m.candidates('becuz', () => [{word: 'because', count: 1}]); eq(c[0], {word: 'because', kind: 'slip', weight: 1}); });
-test('prefix outranks fuzzy at equal weight', () => { const c = m.candidates('help', () => [{word: 'hello', count: 1}]); ok(c.findIndex(x => x.word === 'help') < c.findIndex(x => x.word === 'hello') || c[0].kind === 'slip'); });
+test('ordered by weight, then kind', () => {
+  const order = ['slip', 'prefix', 'sound', 'typo'];
+  for (const c of [m.candidates('hel', () => [{word: 'hello', count: 1}]), m.candidates('fone', none)])
+    for (let i = 1; i < c.length; i++) ok(c[i - 1].weight > c[i].weight || (c[i - 1].weight === c[i].weight && order.indexOf(c[i - 1].kind) <= order.indexOf(c[i].kind)));
+  eq(m.candidates('hel', () => [{word: 'hello', count: 1}])[0].word, 'hello');
+});
 test('suggestFix', () => { eq(m.suggestFix('fone', none, () => 0), 'phone'); eq(m.suggestFix('phone', none, () => 0), null); });
 test('fast enough on 20k words', async () => {
   const big = createMatcher((await loadWordList('../data/words.txt')).words()); const t = performance.now();
@@ -274,7 +274,7 @@ test('fast enough on 20k words', async () => {
 - Produces:
   - `personalWeight(n: number): number`, equal to `Math.min(0.8, n / (n + 500))`.
   - `gatherCandidates({partial, context, matcher, memory, wordList}): Array<{word, kind, weight}>`. When `partial === ''`, it returns `memory.followers(context, 30)` plus `wordList.top(30)`, with kind `'next'` and weight 1. Otherwise it returns `matcher.candidates(partial, memory.slipsFor)`.
-  - `rank(cands, {context, memory, wordList, ai: Map<string, number> | null, limit, now = Date.now()}): string[]`. It drops blocked words and duplicates (keeping the higher weight). Each source (personal `memory.score`, `wordList.score`, ai) is normalised over the candidate set by dividing by its max (when max > 0). `blend = wp·P + wl·L + wa·A`, where `wp = personalWeight(memory.committedWords)`, and with `ai` null: `wl = 1 - wp`, `wa = 0`; otherwise `wl = wa = (1 - wp) / 2`. Final score is `weight × blend`. Ties keep the input order (kind order from the matcher). It returns the top `limit` keys.
+  - `rank(cands, {context, memory, wordList, limit, now = Date.now()}): string[]`. It drops blocked words and duplicates (keeping the higher weight). Each source (personal `memory.score`, `wordList.score`) is normalised over the candidate set by dividing by its max (when max > 0). `blend = wp·P + (1 - wp)·L`, where `wp = personalWeight(memory.committedWords)`. Final score is `weight × blend`. Ties keep the input order (kind order from the matcher). It returns the top `limit` keys.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -282,7 +282,6 @@ test('fast enough on 20k words', async () => {
 test('personalWeight', () => { eq(personalWeight(0), 0); near(personalWeight(500), 0.5); eq(personalWeight(1e6), 0.8); });
 test('new user follows the word list', () => { /* empty memory, wordList 'the 1000\nthey 10' , candidates for 'the' prefix → ['the', 'they'] */ });
 test('personal habits win once learned', () => { /* commit 'from the clinic' 600 times (n ≥ 1800); context ['from','the'], partial 'cl' with wordList 'class 1000\nclinic 1'; expect rank(...)[0] === 'clinic' */ });
-test('AI can reorder ties', () => { /* empty memory, two equal-frequency words; ai Map gives the second 0.9, the first 0.1; expect the second first */ });
 test('blocked never shown', () => { /* block 'class'; expect not in output */ });
 test('limit respected', () => { /* limit 3 → length ≤ 3 */ });
 ```
@@ -304,9 +303,8 @@ Each test body builds the stated memory and word list with `createMemory`, `pars
 - Produces, `js/settings.js`: `DEFAULTS` (below), and `withDefaults(saved): object`, which merges saved values over the defaults and ignores unknown keys and values of the wrong type.
 
 ```js
-export const DEFAULTS = { textSize: 'large', contrast: 'normal', font: 'system', extraSpacing: false,
-  suggestionCount: 3, calmMode: true, tapSafety: 'off', speakEachWord: false, clearAfterSpeak: false,
-  autoFixSlips: false, phraseSpeaks: false, voiceURI: null, rate: 1, pitch: 1, aiEnabled: true, setupDone: false };
+export const DEFAULTS = { textSize: 'large', contrast: 'normal', font: 'system', suggestionCount: 3,
+  tapSafety: false, speakEachWord: false, clearAfterSpeak: false, phraseSpeaks: false, voiceURI: null, rate: 1 };
 ```
 
 - [ ] **Step 1: Write the failing tests**
@@ -321,48 +319,9 @@ test('withDefaults ignores junk', () => { const s = withDefaults({textSize: 'hug
 
 - [ ] **Step 3: Commit** ("Predictor: storage and settings")
 
-### Task 8: AI model worker
+### Task 8: Removed
 
-**Files:**
-- Create: `js/vendor/transformers.web.min.js` (from `https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/dist/transformers.web.min.js`) and `js/vendor/LICENSE-transformers.txt` (Apache-2.0)
-- Create: `js/ai-worker.js`, `js/ai.js`
-- Test: `tests/ai.test.js` (add to `SPECS`), `tests/ai-live.html` (manual check)
-
-**Interfaces:**
-- Worker protocol (module worker):
-  - In: `{type: 'load', device: 'webgpu' | 'wasm'}`, and `{type: 'score', id: number, context: string, candidates: string[]}`.
-  - Out: `{type: 'progress', loaded: number, total: number}`, `{type: 'ready'}`, `{type: 'error', message: string}`, and `{type: 'scores', id, scores: number[], ms: number}`.
-- `js/ai-worker.js` loads `AutoTokenizer` and `AutoModelForCausalLM` for `MODEL_ID = 'onnx-community/SmolLM2-135M-ONNX'` with `dtype: 'q8'` (`model_quantized.onnx`, about 137 MB), forwarding `progress_callback` as progress messages that sum to bytes overall. Scoring runs one forward pass on the context, applies softmax to the last position, and gives each candidate the probability of the first token of `' ' + candidate` (encoded without special tokens; first-token ids cached in a Map). An empty context uses the BOS token.
-- `js/ai.js` produces:
-  - `speedGuard(times: number[]): boolean`, true when there are ≥ 5 samples and the median of the last 5 is over 400.
-  - `shouldAutoDownload(connection): boolean`, true only when `connection?.type` is `'wifi'` or `'ethernet'`.
-  - `createAI(makeWorker: () => WorkerLike, onStatus: (s: {state, loaded?, total?, message?}) => void): AI`, where AI is `{load(): void, score(context: string, candidates: string[]): Promise<Map<string, number> | null>, state: 'idle' | 'loading' | 'ready' | 'error' | 'slow' | 'off', setEnabled(on: boolean): void}`. `score` resolves null when the state isn't `'ready'`, when a newer `score` call has started (stale), or on error. After each reply it records `ms`, and if `speedGuard` trips, the state becomes `'slow'`. `setEnabled(true)` from `'slow'` clears the timings and goes back to `'ready'`. The device is `'webgpu'` when `navigator.gpu` exists, otherwise `'wasm'`.
-
-- [ ] **Step 1: Write the failing tests (fake worker, no model download)**
-
-```js
-function fakeWorker(ms = 10) { const w = { postMessage(msg) { setTimeout(() => {
-  if (msg.type === 'load') w.onmessage({data: {type: 'ready'}});
-  if (msg.type === 'score') w.onmessage({data: {type: 'scores', id: msg.id, scores: msg.candidates.map((_, i) => i), ms}}); }, 0); } }; return w; }
-test('speedGuard', () => { ok(!speedGuard([500, 500, 500, 500])); ok(speedGuard([100, 500, 500, 500, 500])); ok(!speedGuard([500, 100, 100, 100, 100, 100])); });
-test('shouldAutoDownload', () => { ok(shouldAutoDownload({type: 'wifi'})); ok(!shouldAutoDownload({type: 'cellular'})); ok(!shouldAutoDownload(undefined)); });
-test('scores map', async () => { const ai = createAI(() => fakeWorker(), () => {}); ai.load(); await new Promise(r => setTimeout(r, 5)); eq([...(await ai.score('hi', ['a', 'b']))], [['a', 0], ['b', 1]]); });
-test('stale reply is dropped', async () => { const ai = createAI(() => fakeWorker(), () => {}); ai.load(); await new Promise(r => setTimeout(r, 5)); const first = ai.score('a', ['x']); const second = ai.score('ab', ['y']); eq(await first, null); ok(await second); });
-test('slow device turns AI off', async () => { const ai = createAI(() => fakeWorker(900), () => {}); ai.load(); await new Promise(r => setTimeout(r, 5)); for (let i = 0; i < 5; i++) await ai.score('a', ['x']); eq(ai.state, 'slow'); eq(await ai.score('a', ['x']), null); });
-```
-
-- [ ] **Step 2: Check that they fail, then implement `js/ai.js`, then reload. Expected: all pass**
-
-- [ ] **Step 3: Implement `js/ai-worker.js` and the manual page `tests/ai-live.html`**
-
-The live page loads the real worker, shows progress, then scores `context 'can you pick me up from the'` with candidates `['store', 'clinic', 'banana', 'the']` and prints the scores and `ms`.
-
-- [ ] **Step 4: Run the live check in the built-in browser**
-
-Open `http://127.0.0.1:8790/tests/ai-live.html`.
-Expected: progress reaches 100%, `banana` and `the` score below `store`, and `ms` is printed. On a reload, it loads from cache with no 137 MB download (check the network panel). If the Transformers.js 4.3.1 API names differ, follow its README for the same calls and note the change in the commit message.
-
-- [ ] **Step 5: Commit** ("Predictor: in-browser AI model worker")
+The AI model was cut from v1 on 2026-10-24. Nothing to build.
 
 ### Task 9: Writing screen and live suggestions
 
@@ -370,18 +329,17 @@ Expected: progress reaches 100%, `banana` and `the` score below `store`, and `ms
 - Create: `index.html`, `styles.css`, `js/app.js`
 
 **Interfaces:**
-- Consumes: everything from Tasks 1–8.
+- Consumes: everything from Tasks 1–7.
 - DOM, from top to bottom: `#phrases` (sideways-scrolling quick-phrase buttons plus a `+` button labelled "Save as quick phrase"), `#editor` (wrapping `#mirror` behind a transparent `<textarea id="text" aria-label="Your message">`, with the same font, padding and wrapping), `#suggestions` (3–5 `<button class="sugg">`), `#actions` (Task 10), `#menu` (a `<dialog>` with "Hear it" and "Don't suggest this"), `#toast`, and `#banner`.
-- `styles.css`: custom properties for the three text sizes (large 28px, extra large 34px, huge 42px, on `<html data-size>`), the three contrasts (`data-contrast="normal" | "high" | "dark"`, high = black on yellow at AAA), `data-font="hyperlegible"` (Atkinson Hyperlegible from Google Fonts, cached by the service worker), and `data-spacing`. Suggestions are at least 56 px tall with gaps of at least 6 px, and the best one has a 3 px outline. No transitions under `prefers-reduced-motion` or calm mode.
+- `styles.css`: custom properties for the three text sizes (large 28px, extra large 34px, huge 42px, on `<html data-size>`), the three contrasts (`data-contrast="normal" | "high" | "dark"`, high = black on yellow at AAA), and `data-font="hyperlegible"` (Atkinson Hyperlegible from Google Fonts, cached by the service worker). Suggestions are at least 56 px tall with gaps of at least 6 px, and the best one has a 3 px outline. No transitions or animations at all.
 
 Behaviour in `js/app.js`:
 1. **Start-up:** `openStore()`, then `createMemory(saved memory)`, `withDefaults(saved settings)`, `loadWordList()`, and `createMatcher([...wordList.words(), ...memory.knownWords()])`. Apply the settings to `<html>` data attributes. When `store.persistent` is false, show the banner "Can't remember things right now. Make a backup in settings."
-2. **`update()` on each `input` event:** run `splitContext(text before cursor)`, `gatherCandidates`, and `rank` (ai null, limit = `suggestionCount`), then render the buttons with `capitalizeIfStart` and `memory.display`. Then debounce 250 ms → `ai.score(contextString, top 50 candidate words)` → if not null and the text is unchanged, re-rank with `ai` and re-render.
-3. **Calm mode:** while any pointer is down on the page, renders are held, and the latest one is applied on `pointerup`.
+2. **`update()` on each `input` event:** run `splitContext(text before cursor)`, `gatherCandidates`, and `rank` (limit = `suggestionCount`), then render the buttons with `capitalizeIfStart` and `memory.display`.
+3. **Calm mode (always on):** while any pointer is down on the page, renders are held, and the latest one is applied on `pointerup`.
 4. **Choosing a suggestion:** `applySuggestion`. If the partial wasn't a prefix of the chosen word, call `memory.recordSlip(partial, word)`. Remember `{prev, word}` as the last pick. If the very next input is `deleteContentBackward`, call `memory.penalize(prev, word)`. Call `matcher.add(word)`. When `speakEachWord` is on, speak the word.
-5. **Tap safety:** with `'off'`, a tap chooses and a 500 ms hold opens `#menu`. With `'delay'`, a press must last at least 300 ms to choose, and a 500 ms hold opens the menu (on release). With `'hold'`, a 600 ms hold chooses, and a 1500 ms hold opens the menu.
-6. **Spelling underline:** after a space, if the finished word gives `matcher.suggestFix(...)` a value, wrap that word in `<span class="fix">` in `#mirror` (dotted underline, no red), and put the fix first in the suggestions. Tapping it replaces the word and records the slip. If `autoFixSlips` is on and `memory.slipsFor(word)[0]?.count >= 3`, replace it automatically (undoable).
-7. **Keystroke stats:** each `beforeinput` of `insertText` or `deleteContentBackward`, each suggestion tap, and each phrase tap adds 1 to `taps`.
+5. **Tap safety:** when `tapSafety` is false, a tap chooses. When true, a press shorter than 300 ms is ignored. Either way, a 500 ms hold opens `#menu` instead of choosing.
+6. **Spelling underline:** after a space, if the finished word gives `matcher.suggestFix(...)` a value, wrap that word in `<span class="fix">` in `#mirror` (dotted underline, no red), and put the fix first in the suggestions. Tapping it replaces the word and records the slip.
 
 - [ ] **Step 1: Build the page and the `update()` loop (points 1–2)**
 
@@ -389,7 +347,7 @@ Behaviour in `js/app.js`:
 
 Open `http://127.0.0.1:8790/`. Type `bec`. Expected: `because` is among the suggestions. Type `fone`, then a space. Expected: "fone" has a dotted underline and the first suggestion is `phone`. Tap it. Expected: the text reads `phone `.
 
-- [ ] **Step 3: Add calm mode, tap safety, the long-press menu, slips and penalties (points 3–7)**
+- [ ] **Step 3: Add calm mode, tap safety, the long-press menu, slips and penalties (points 3–6)**
 
 - [ ] **Step 4: Check in the browser**
 
@@ -408,19 +366,18 @@ Open `http://127.0.0.1:8790/`. Type `bec`. Expected: `because` is among the sugg
 **Interfaces:**
 - Produces, `js/speech.js`:
   - `listVoices(): Promise<SpeechSynthesisVoice[]>`, which waits for `voiceschanged` up to 1 s.
-  - `speak(text: string, {voiceURI, rate, pitch}): boolean`. It cancels any current speech, then speaks, and returns false when `speechSynthesis` or voices are missing.
-- `#actions` buttons, each with an icon and a text label: Speak (primary), Copy, Send, Undo, Clear, Recent.
+  - `speak(text: string, {voiceURI, rate}): boolean`. It cancels any current speech, then speaks, and returns false when `speechSynthesis` or voices are missing.
+- `#actions` buttons, each with an icon and a text label: Speak (primary), Copy, Undo, Clear, Recent.
 
 Behaviour:
-1. **Commit:** Speak, Copy and Send call `learn(text)`. If `shouldLearn(text, lastLearned)`: `memory.commit`, then `memory.recordStats(taps, text.trim().length)`, reset `taps`, set `lastLearned`, add the new known words to the matcher, and save the memory to the store (debounced 1 s). If it returns `offerPin`, show a toast with a "Pin it" button.
+1. **Commit:** Speak and Copy call `learn(text)`. If `shouldLearn(text, lastLearned)`: `memory.commit`, set `lastLearned`, add the new known words to the matcher, and save the memory to the store (debounced 1 s). If it returns `offerPin`, show a toast with a "Pin it" button.
 2. **Speak:** when `speak()` returns false, show "Your phone's text-to-speech is off. Turn it on in your phone's accessibility settings." When `clearAfterSpeak` is on, clear afterwards (undoable).
 3. **Copy:** `navigator.clipboard.writeText`, then a large toast "Copied" for 2 s. If it's denied: "Couldn't copy. Long-press the text and choose Copy."
-4. **Send:** `navigator.share({text})` when available, otherwise it does the same as Copy. If they cancel the share, nothing happens and it isn't an error.
-5. **Undo:** a stack (max 50) of `{text, cursor}`, pushed before every app-made change (suggestion, phrase, fix, clear, recent) and at each word boundary while typing. Undo pops it and restores.
-6. **Recent:** a `<dialog>` listing `memory.recent()`. A tap restores that sentence into the text box (undoable).
-7. **Quick phrases:** `#phrases` shows `memory.pinned()`. A tap inserts the phrase, or speaks it when `phraseSpeaks` is on. `+` pins the current text (when it's not empty).
+4. **Undo:** a stack (max 50) of `{text, cursor}`, pushed before every app-made change (suggestion, phrase, fix, clear, recent) and at each word boundary while typing. Undo pops it and restores.
+5. **Recent:** a `<dialog>` listing `memory.recent()`. A tap restores that sentence into the text box (undoable).
+6. **Quick phrases:** `#phrases` shows `memory.pinned()`. A tap inserts the phrase, or speaks it when `phraseSpeaks` is on. `+` pins the current text (when it's not empty). On the very first start (no saved memory), pin "I need help", "Thank you", "Yes", "No" and "Please wait".
 
-- [ ] **Step 1: Implement `speech.js` and the actions (points 1–7)**
+- [ ] **Step 1: Implement `speech.js` and the actions (points 1–6)**
 
 - [ ] **Step 2: Check in the built-in browser**
 
@@ -437,44 +394,24 @@ Behaviour:
 - Modify: `index.html`, `styles.css`, `js/app.js`
 
 Behaviour:
-1. **Settings `<dialog id="settings">`** (opened by a gear button labelled "Settings") has one large control per `DEFAULTS` key except `setupDone` and `voiceURI`: segmented buttons for the choices and big switches for the on/off options. Voice is a `<select>` from `listVoices()`, with speed and pitch sliders and a Test button that speaks "This is how I sound." There's an AI section showing `ai.state` in words, download progress, and a Retry button on error. A "Pause learning" switch (`memory.paused`, saved with settings). Every change applies straight away and is saved.
-2. **"What it has learned" `<dialog id="learned">`** has a search box, then the words list (display form, count, delete button) and the phrases list (text, pin toggle, delete). It shows "Taps saved: N%" from `memory.savings()`, or "Not enough use yet" when that's null. Buttons: Backup (downloads `predict-backup-YYYY-MM-DD.json` via a Blob link), Restore (file input → `readBackup` → a confirm dialog "Replace everything it has learned with this backup?" → replace the memory and settings, then rebuild the matcher; a null result shows "That file isn't a backup from this app. Nothing was changed."), and Start fresh (confirm "Delete everything it has learned? Your settings stay." → `memory.clearLearned()`).
+1. **Settings `<dialog id="settings">`** (opened by a gear button labelled "Settings") has one large control per `DEFAULTS` key except `voiceURI`: segmented buttons for the choices and big switches for the on/off options. Voice is a `<select>` from `listVoices()`, with a speed slider and a Test button that speaks "This is how I sound." A "Pause learning" switch (`memory.paused`, saved with settings). A "Starter words" box ("Names, places, pets and other words you use", comma or newline separated) with an Add button → `memory.addStarterWords`, then add them to the matcher. Every change applies straight away and is saved.
+2. **"What it has learned" `<dialog id="learned">`** shows the words list (display form, count, delete button) and the phrases list (text, pin toggle, delete). Buttons: Backup (downloads `predict-backup-YYYY-MM-DD.json` via a Blob link), Restore (file input → `readBackup` → a confirm dialog "Replace everything it has learned with this backup?" → replace the memory and settings, then rebuild the matcher; a null result shows "That file isn't a backup from this app. Nothing was changed."), and Start fresh (confirm "Delete everything it has learned? Your settings stay." → `memory.clearLearned()`).
 
 - [ ] **Step 1: Implement both dialogs**
 
 - [ ] **Step 2: Check in the built-in browser**
 
 1. Set huge text and high contrast, then reload. Expected: both are kept.
-2. Back up, Start fresh, then Restore that file. Expected: the learned words come back.
-3. Restore `tests/fixtures/not-a-backup.json` (create it as `{"hello": 1}`). Expected: the refusal message, with nothing changed.
-4. Check that every control is reachable with the Tab key and has an accessible name (`read_page` filter interactive shows no unnamed buttons).
+2. Add the starter word `Maria`, then type `ma`. Expected: `Maria` is among the suggestions.
+3. Back up, Start fresh, then Restore that file. Expected: the learned words come back.
+4. Restore `tests/fixtures/not-a-backup.json` (create it as `{"hello": 1}`). Expected: the refusal message, with nothing changed.
+5. Check that every control is reachable with the Tab key and has an accessible name (`read_page` filter interactive shows no unnamed buttons).
 
 - [ ] **Step 3: Commit** ("Predictor: settings and learned-words page")
 
-### Task 12: First-run setup and model download
+### Task 12: Removed
 
-**Files:**
-- Modify: `index.html`, `styles.css`, `js/app.js`
-
-Behaviour:
-1. When `settings.setupDone` is false, a full-screen `<dialog id="setup">` walks through five steps, each with Back, Next and "Skip setup":
-   1. text size and contrast (live preview),
-   2. voice and speed (with Test),
-   3. quick phrases (prefilled "I need help", "Thank you", "Yes", "No", "Please wait", each removable, plus an add box),
-   4. starter words (a text box: "Names, places, pets and other words you use", comma or newline separated → `memory.addStarterWords`, then add them to the matcher),
-   5. AI suggestions ("Download now (about 140 MB, best on Wi-Fi)" and "Not now").
-2. Finishing or skipping sets `setupDone` to true.
-3. **On every start after setup:** if `aiEnabled` and the model isn't loaded, call `ai.load()` straight away when `shouldAutoDownload(navigator.connection)` is true, or when the model is already in Cache Storage (check `caches.keys()` for the Transformers.js cache name). Otherwise show a small "Download AI suggestions" link in settings. Progress shows as a thin bar under `#suggestions` while loading. Suggestions keep working throughout.
-
-- [ ] **Step 1: Implement setup and the download logic**
-
-- [ ] **Step 2: Check in the built-in browser with fresh site data**
-
-1. Expected: setup appears. Add the starter word `Maria`, finish, then type `ma`. Expected: `Maria` is among the suggestions.
-2. Expected: the model downloads with the progress bar while suggestions keep working.
-3. After a reload, setup doesn't appear and the AI goes to `ready` without downloading again.
-
-- [ ] **Step 3: Commit** ("Predictor: first-run setup and model download")
+The first-run setup wizard was cut on 2026-10-24. Starter words and quick phrases live in settings (Tasks 10–11). Nothing to build.
 
 ### Task 13: Offline and install
 
@@ -483,7 +420,7 @@ Behaviour:
 - Modify: `index.html` (manifest link, theme colour, apple-touch-icon, service worker registration)
 
 **Interfaces:**
-- `sw.js`: `const CACHE = 'predict-v1'`. On install, it precaches the app shell (every file in `index.html`, `styles.css`, `js/**`, `data/words.txt`, `manifest.webmanifest` and `icons/*`, listed explicitly). Fetch handling: cache-first for same-origin requests and for `cdn.jsdelivr.net` and `fonts.gstatic.com` / `fonts.googleapis.com` (cached on first use), and pass-through for `huggingface.co` (Transformers.js caches the model itself). On activate, it deletes old caches. Bump `CACHE` on every release.
+- `sw.js`: `const CACHE = 'predict-v1'`. On install, it precaches the app shell (every file in `index.html`, `styles.css`, `js/**`, `data/words.txt`, `manifest.webmanifest` and `icons/*`, listed explicitly). Fetch handling: cache-first for same-origin requests and for `fonts.gstatic.com` / `fonts.googleapis.com` (cached on first use). On activate, it deletes old caches. Bump `CACHE` on every release.
 - Manifest: `name` "Predict", `short_name` "Predict", `display` standalone, `start_url` "./", `background_color` and `theme_color` matching the normal theme, with icons 192, 512 and the SVG (`sizes: "any"`, `purpose: "any maskable"` on the 512).
 - Icons: a simple speech-bubble glyph, made as an SVG first. The PNGs are rendered from it with Python and Pillow (`pip install pillow` if it's missing) or the browser's canvas.
 
@@ -492,7 +429,7 @@ Behaviour:
 - [ ] **Step 2: Check in the built-in browser**
 
 1. Load the page, then use `javascript_tool` to check that `navigator.serviceWorker.controller` isn't null after a reload.
-2. Stop `dev_server.py` and reload. Expected: the app loads, suggestions work, and the AI reaches `ready` from cache.
+2. Stop `dev_server.py` and reload. Expected: the app loads and suggestions work.
 3. Run the tests page once more. Expected: all pass.
 
 - [ ] **Step 3: Commit** ("Predictor: offline and install")
@@ -507,7 +444,7 @@ Contents:
 2. Running it locally: `python dev_server.py`, then `/` for the app and `/tests/` for the tests.
 3. **Putting it online (Jess's one-time step):** in the Cloudflare dashboard, go to Workers & Pages → Create → Pages → Connect to Git → `jdelsrv-hub/ACTS-Design` → production branch `main`, framework preset None, build command empty, build output directory `08-Website/predict`. Note that `dev_server.py`, `tests/` and `docs/` get published too, which is harmless. Optionally, add a Cloudflare Pages `_headers` rule later if needed.
 4. **Releasing an update:** bump `CACHE` in `sw.js`, commit, and push.
-5. **Device checklist** (from spec section 9), as checkboxes: mid-range Android and iPhone; suggestion speed; AI speed guard; install and offline use; Speak; VoiceOver and TalkBack; a few days' trial with the person, with taps saved read from the learned page.
+5. **Device checklist** (from spec section 9), as checkboxes: mid-range Android and iPhone; suggestion speed; install and offline use; Speak; VoiceOver and TalkBack; a few days' trial with the person.
 
 - [ ] **Step 1: Write the README**
 

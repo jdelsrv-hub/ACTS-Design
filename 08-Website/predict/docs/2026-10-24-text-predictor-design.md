@@ -3,6 +3,12 @@
 Date: 2026-10-24
 Status: approved in conversation, waiting for spec review
 
+> **Scope change, 2026-10-24 (Jess):** cut from v1, overriding the sections below:
+> - **The AI model** (approach B falls back to approach A). There's no model, no worker, no download and no speed guard. The mixer blends personal memory and the word list only: `blend = wp·P + (1 - wp)·L`.
+> - **The first-run setup wizard.** Starter words and quick phrases live in settings. Default quick phrases ("I need help", "Thank you", "Yes", "No", "Please wait") are pinned on the very first start.
+> - **Some settings.** Calm mode is always on, not a setting. Tap safety is a single on/off switch (a 300 ms hold). There's no pitch, no letter spacing, and no auto-fix of known slips (the one-tap underline fix stays).
+> - **Small extras.** There's no Send button, no search on the learned page, no "taps saved" stat (keystroke savings are judged during the trial), and no memory size caps.
+
 ## 1. Purpose
 
 A web app that predicts the next word as one particular person types, learns their own words and habits as they use it, and is comfortable for someone who:
