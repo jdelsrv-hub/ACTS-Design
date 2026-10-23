@@ -13,7 +13,7 @@ export function createMemory(snapshot) {
   s.slips = table();
   for (const typed in snapshot?.slips) s.slips[typed] = table(snapshot.slips[typed]);
   s.blocked = [...s.blocked];
-  s.pins = [...s.pins];
+  s.pins = s.pins.filter(p => p in s.phrases); // drop ghost pins so pinned() and phrases() agree
 
   let paused = false;
   let totalCache = null;

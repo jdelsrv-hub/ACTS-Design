@@ -17,3 +17,21 @@ test('validateSnapshot rejects each bad field', () => {
   ok(!validateSnapshot(null)); ok(!validateSnapshot([]));
   const s = good(); delete s.pins; ok(!validateSnapshot(s));
 });
+test('a backup whose only fault is the memory is refused', () => {
+  const b = JSON.parse(makeBackup(createMemory(), {})); b.memory.pins = 'x'; eq(readBackup(JSON.stringify(b)), null);
+  b.memory.pins = []; ok(readBackup(JSON.stringify(b)));
+});
+test('validateSnapshot rejects malformed nested entries', () => {
+  const m = createMemory(); m.commit('hi Maria', T); m.recordSlip('teh', 'the'); m.penalize('hi', 'maria');
+  const good = () => JSON.parse(JSON.stringify(m.toJSON()));
+  ok(validateSnapshot(good()));
+  const bad = [
+    ['words', {x: null}], ['words', {the: 5}], ['words', {x: {count: -1, lastUsed: T}}], ['words', {x: {count: 1}}],
+    ['ngrams', {'a b': null}], ['ngrams', {'a b': {count: 'x', lastUsed: T}}],
+    ['phrases', {x: null}], ['phrases', {x: 5}], ['phrases', {x: {count: NaN, lastUsed: T}}],
+    ['penalties', {'a b': 'x'}], ['penalties', {'a b': -1}],
+    ['slips', {teh: null}], ['slips', {teh: 'the'}], ['slips', {teh: {the: 'x'}}], ['slips', {teh: {the: -2}}],
+    ['pins', 'x'], ['pins', [3]],
+  ];
+  for (const [k, v] of bad) { const s = good(); s[k] = v; ok(!validateSnapshot(s), k + ' ' + JSON.stringify(v)); }
+});

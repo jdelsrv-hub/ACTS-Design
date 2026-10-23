@@ -3,12 +3,16 @@
 const isObject = x => x !== null && typeof x === 'object' && !Array.isArray(x);
 const isStrings = x => Array.isArray(x) && x.every(v => typeof v === 'string');
 
-// shortcut: only top-level fields are checked, not each nested entry, tighten if a bad file ever gets past this
+const isCount = n => Number.isFinite(n) && n >= 0;
+const isEntry = e => isObject(e) && isCount(e.count) && Number.isFinite(e.lastUsed);
+
 export function validateSnapshot(s) {
   return isObject(s) && s.version === 1
-    && ['words', 'ngrams', 'phrases', 'slips', 'penalties'].every(k => isObject(s[k]))
+    && ['words', 'ngrams', 'phrases'].every(k => isObject(s[k]) && Object.values(s[k]).every(isEntry))
+    && isObject(s.penalties) && Object.values(s.penalties).every(isCount)
+    && isObject(s.slips) && Object.values(s.slips).every(row => isObject(row) && Object.values(row).every(isCount))
     && ['blocked', 'recent', 'pins'].every(k => isStrings(s[k]))
-    && Number.isFinite(s.committedWords) && s.committedWords >= 0;
+    && isCount(s.committedWords);
 }
 
 export function makeBackup(memory, settings) {

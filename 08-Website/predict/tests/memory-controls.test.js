@@ -41,3 +41,8 @@ test('clearLearned empties everything but paused', () => {
   eq(m.committedWords, 0); eq(m.followers(['see'], 5), []); ok(m.paused);
   eq(Object.keys(m.toJSON().penalties), []);
 });
+test('pins naming no phrase are dropped on load', () => {
+  const m = createMemory(); m.commit('real one', T); m.pinPhrase('real one');
+  const snap = JSON.parse(JSON.stringify(m.toJSON())); snap.pins.push('ghost');
+  const copy = createMemory(snap); eq(copy.pinned(), ['real one']); eq(copy.phrases().filter(p => p.pinned).length, 1);
+});
