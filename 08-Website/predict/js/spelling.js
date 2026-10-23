@@ -12,7 +12,7 @@ ROWS.forEach((row, r) => [...row].forEach((ch, c) => {
 // Optimal string alignment: insert, delete and transpose cost 1; substituting a neighbouring key costs 0.5.
 export function editDistance(a, b) {
   const d = [];
-  for (let i = 0; i <= a.length; i++) { d.push([i]); }
+  for (let i = 0; i <= a.length; i++) d.push([i]);
   for (let j = 1; j <= b.length; j++) d[0][j] = j;
   for (let i = 1; i <= a.length; i++) {
     for (let j = 1; j <= b.length; j++) {
@@ -54,22 +54,25 @@ export function createMatcher(words) {
     const sameLetter = byLetter.get(partial.charAt(0)) ?? [];
     for (const word of sameLetter) if (word.startsWith(partial)) offer(word, 'prefix', WEIGHT.prefix);
 
-    const n = partial.length;
-    const code = n >= 3 ? doubleMetaphone(partial)[0] : '';
-    if (code) {
-      for (const word of byCode.get(code[0]) ?? []) {
-        if (codes.get(word).some(c => c && c.startsWith(code))) offer(word, 'sound', WEIGHT.sound);
+    // Fuzzy matches only fill spare room, so they never bury what is being typed.
+    if (best.size < 3) {
+      const n = partial.length;
+      const code = n >= 3 ? doubleMetaphone(partial)[0] : '';
+      if (code.length >= 2) {
+        for (const word of byCode.get(code[0]) ?? []) {
+          if (codes.get(word).some(c => c && (c === code || (n >= 5 && c.startsWith(code))))) offer(word, 'sound', WEIGHT.sound);
+        }
       }
-    }
 
-    const maxDistance = n >= 5 ? 2 : n >= 2 ? 1 : 0;
-    if (maxDistance) {
-      // shortcut: typos only look at words starting with the same letter, so a wrong first letter is not caught; upgrade by also scanning neighbour-key buckets.
-      for (const word of sameLetter) {
-        if (word.length < n - 1) continue;
-        let d = Infinity;
-        for (let len = n - 1; len <= n + 1; len++) d = Math.min(d, editDistance(partial, word.slice(0, len)));
-        if (d <= maxDistance) offer(word, 'typo', d <= 1 ? 0.5 : 0.25);
+      const maxDistance = n >= 5 ? 2 : n >= 2 ? 1 : 0;
+      if (maxDistance) {
+        // shortcut: typos only look at words starting with the same letter, so a wrong first letter is not caught; upgrade by also scanning neighbour-key buckets.
+        for (const word of sameLetter) {
+          if (word.length < n - 1) continue;
+          let d = Infinity;
+          for (let len = n - 1; len <= n + 1; len++) d = Math.min(d, editDistance(partial, word.slice(0, len)));
+          if (d <= maxDistance) offer(word, 'typo', d <= 1 ? 0.5 : 0.25);
+        }
       }
     }
 
@@ -81,8 +84,8 @@ export function createMatcher(words) {
   function suggestFix(word, slipsFor, rank) {
     if (codes.has(word)) return null;
     const all = candidates(word, slipsFor);
-    const slip = all.find(c => c.kind === 'slip');
-    if (slip) return slip.word;
+    const slips = slipsFor(word);
+    if (slips.length) return slips.reduce((a, b) => (b.count > a.count ? b : a)).word;
     let top = null;
     for (const c of all) {
       if (c.kind === 'prefix' || c.weight < 0.5) continue;

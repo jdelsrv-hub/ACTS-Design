@@ -27,3 +27,18 @@ test('fast enough on 20k words', async () => {
   for (const p of ['becau', 'fone', 'tomoro', 'th', 'wensday']) big.candidates(p, none);
   ok((performance.now() - t) / 5 < 20, 'average under 20 ms');
 });
+
+const f = createMatcher(['phone', 'night', 'hello', 'help', 'held', 'because', 'wednesday', 'clinic', 'want', 'find', 'found', 'fan', 'fine', 'her', 'head', 'here', 'the', 'ten', 'tell']);
+const fk = (p) => Object.fromEntries(f.candidates(p, none).map(c => [c.word, c.kind]));
+// find stays in as a weight-0.5 typo (fone -> find is two neighbour-key slips), below phone; it is not a sound match.
+test('sound match is exact, so fone finds phone but not want, find or found as sounds', () => {
+  const k = fk('fone'); eq(k.phone, 'sound'); ok(!('want' in k) && !('found' in k), 'no noise'); ok(k.find !== 'sound', 'find is not a sound match');
+});
+test('fuzzy matches stay out when prefix matches fill the list', () => {
+  const k = fk('hel'); eq(Object.keys(k).sort(), ['held', 'hello', 'help']); ok(Object.values(k).every(v => v === 'prefix'));
+});
+test('teh is a typo for the, with no sound matches', () => {
+  const c = f.candidates('teh', none); eq(c.find(x => x.word === 'the').kind, 'typo'); ok(!c.some(x => x.kind === 'sound'));
+});
+test('suggestFix uses the slip with the highest count', () =>
+  eq(f.suggestFix('becuz', () => [{word: 'clinic', count: 1}, {word: 'because', count: 5}], () => 0), 'because'));
