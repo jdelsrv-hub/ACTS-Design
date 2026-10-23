@@ -1,0 +1,11 @@
+data/words.txt is derived from the English 2018 frequency list in hermitdave/FrequencyWords:
+https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_50k.txt
+
+Filter: kept lines whose word matches ^[a-z]+('[a-z]+)?$ (lowercase ASCII letters with at
+most one apostrophe part), in the original order, and stopped at the first 20,000.
+Each line is "word count".
+
+Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0),
+https://creativecommons.org/licenses/by-sa/4.0/
+Data from OpenSubtitles via hermitdave/FrequencyWords. This derived file is shared under
+the same licence.
