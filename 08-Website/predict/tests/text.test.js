@@ -15,6 +15,19 @@ test('applySuggestion capitalises sentence start', () => eq(applySuggestion('ok.
 test('applySuggestion in the middle replaces the word at the cursor', () => {
   eq(applySuggestion('go to the stor today', 13, 'store'), {text: 'go to the store today', cursor: 16});
 });
+test('applySuggestion at the left edge of a word inserts instead of replacing', () => {
+  eq(applySuggestion('see you tomorrow', 8, 'soon'), {text: 'see you soon tomorrow', cursor: 13});
+});
+test('applySuggestion separates an inserted word from a preceding non-space', () => {
+  eq(applySuggestion('I have 2', 8, 'cats'), {text: 'I have 2 cats ', cursor: 14});
+  eq(applySuggestion('yes,', 4, 'please'), {text: 'yes, please ', cursor: 12});
+});
+test('tokenize handles curly apostrophes and accented letters', () => {
+  eq(tokenize('I don’t like café').map(t => t.key), ['i', "don't", 'like', 'café']);
+});
+test('splitContext handles accented letters', () => {
+  eq(splitContext('José and I'), {context: ['josé', 'and'], partial: 'i'});
+});
 test('shouldLearn ignores empty and repeats', () => {
   ok(!shouldLearn('   ', null)); ok(!shouldLearn('Hi there', 'Hi there ')); ok(shouldLearn('Hi there', 'Bye'));
 });

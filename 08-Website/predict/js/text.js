@@ -1,9 +1,13 @@
 // Text helpers: splitting typed text into words, finding the word being typed,
 // and inserting a chosen suggestion. Pure functions, no DOM.
 
-const WORD = /[A-Za-z]+(?:'[A-Za-z]+)?/g;
+const WORD = /\p{L}+(?:['’]\p{L}+)?/gu;
 const SENTENCE_END = /[.!?]/;
-const WORD_CHAR = /[A-Za-z']/;
+const WORD_CHAR = /[\p{L}'’]/u;
+const APOSTROPHE = /['’]/;
+
+// Lowercase, with the curly apostrophe turned into a straight one.
+const toKey = word => word.toLowerCase().replace(/’/g, "'");
 
 export function tokenize(text) {
   const tokens = [];
@@ -12,7 +16,7 @@ export function tokenize(text) {
     const gap = text.slice(prevEnd, m.index);
     tokens.push({
       word: m[0],
-      key: m[0].toLowerCase(),
+      key: toKey(m[0]),
       sentenceStart: tokens.length === 0 || SENTENCE_END.test(gap),
     });
     prevEnd = m.index + m[0].length;
@@ -21,12 +25,12 @@ export function tokenize(text) {
 }
 
 export function splitContext(before) {
-  const partial = (before.match(/[A-Za-z]+(?:'[A-Za-z]*)?$/) || [''])[0];
+  const partial = (before.match(/\p{L}+(?:['’]\p{L}*)?$/u) || [''])[0];
   const rest = before.slice(0, before.length - partial.length);
   const sentence = rest.slice(rest.search(/[.!?][^.!?]*$/) + 1);
   return {
     context: tokenize(sentence).slice(-2).map(t => t.key),
-    partial: partial.toLowerCase(),
+    partial: toKey(partial),
   };
 }
 
@@ -39,16 +43,19 @@ export function capitalizeIfStart(before, word) {
 export function applySuggestion(text, cursor, word) {
   let start = cursor;
   while (start > 0 && WORD_CHAR.test(text[start - 1])) start--;
-  while (text[start] === "'" && start < cursor) start++;
+  while (APOSTROPHE.test(text[start]) && start < cursor) start++;
   let end = cursor;
-  while (end < text.length && WORD_CHAR.test(text[end])) end++;
+  // Only a word being typed (start < cursor) is replaced; at its left edge we insert.
+  if (start < cursor) while (end < text.length && WORD_CHAR.test(text[end])) end++;
 
   const inserted = capitalizeIfStart(text.slice(0, start), word);
   const spaceFollows = /\s/.test(text[end] ?? '');
   const after = spaceFollows ? text.slice(end) : ' ' + text.slice(end);
+  const needsLeadingSpace = start === cursor && cursor > 0 && !/\s/.test(text[cursor - 1]);
+  const lead = needsLeadingSpace ? ' ' : '';
   return {
-    text: text.slice(0, start) + inserted + after,
-    cursor: start + inserted.length + 1,
+    text: text.slice(0, start) + lead + inserted + after,
+    cursor: start + lead.length + inserted.length + 1,
   };
 }
 
