@@ -1,7 +1,8 @@
 // Bump CACHE on every release so phones drop the old files.
-const CACHE = 'predict-v1';
+const CACHE = 'predict-v2';
+// No 'index.html': the host redirects it to './', and a redirect can't be cached for a page load.
 const SHELL = [
-  './', 'index.html', 'styles.css', 'manifest.webmanifest',
+  './', 'styles.css', 'manifest.webmanifest',
   'js/app.js', 'js/backup.js', 'js/memory.js', 'js/mixer.js', 'js/settings.js', 'js/speech.js',
   'js/spelling.js', 'js/storage.js', 'js/text.js', 'js/wordlist.js', 'js/vendor/double-metaphone.js',
   'data/words.txt',
@@ -9,7 +10,8 @@ const SHELL = [
 ];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
-self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
+// cache: 'reload' skips the browser's HTTP cache, so a new release never precaches old files.
+self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())));
 
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
@@ -18,9 +20,14 @@ self.addEventListener('activate', e => e.waitUntil(
 self.addEventListener('fetch', e => {
   const { request } = e;
   const url = new URL(request.url);
-  if (request.method !== 'GET' || !(url.origin === location.origin || FONT_HOSTS.includes(url.hostname))) return;
+  const font = FONT_HOSTS.includes(url.hostname);
+  if (request.method !== 'GET' || !(url.origin === location.origin || font)) return;
   e.respondWith(caches.match(request, { ignoreSearch: url.origin === location.origin }).then(hit => hit || fetch(request).then(res => {
-    if (res.ok || res.type === 'opaque') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(request, copy)); }
+    // An opaque response could be an error page we can't see, so only the fonts are trusted that way.
+    if (res.ok || (font && res.type === 'opaque')) {
+      const copy = res.clone();
+      e.waitUntil(caches.open(CACHE).then(c => c.put(request, copy)).catch(() => {}));
+    }
     return res;
   })));
 });
