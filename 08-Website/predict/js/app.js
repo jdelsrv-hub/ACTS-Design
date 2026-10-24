@@ -104,13 +104,17 @@ function undo() {
   if (s) setText(s.text, s.cursor, false);
 }
 
-function learn(text) {
-  if (!shouldLearn(text, lastLearned)) return;
-  const { offerPin } = memory.commit(text);
-  lastLearned = text;
-  memory.knownWords().forEach(w => matcher.add(w));
-  saveMemory();
-  if (offerPin) toast(`You say "${offerPin}" a lot.`, 6000, offerPin);
+// The note (e.g. "Copied") and any pin offer share one toast: a pin is offered once only, so nothing may replace it.
+function learn(text, note, ms = 2000) {
+  let offer = null;
+  if (shouldLearn(text, lastLearned)) {
+    offer = memory.commit(text).offerPin;
+    lastLearned = text;
+    memory.knownWords().forEach(w => matcher.add(w));
+    saveMemory();
+  }
+  if (offer) toast(`${note ? note + ' ' : ''}You say "${offer}" a lot.`, 6000, offer);
+  else if (note) toast(note, ms);
 }
 
 function say(text) {
@@ -273,16 +277,15 @@ for (const id of ['actions', 'phrases']) $(id).addEventListener('pointerdown', e
 $('speak').addEventListener('click', () => {
   const text = ta.value;
   if (!text.trim()) return;
-  learn(text);
-  say(text);
+  const spoke = speak(text, settings);
+  learn(text, spoke ? '' : NO_SPEECH, 6000);
   if (settings.clearAfterSpeak) setText('', 0);
 });
 $('copy').addEventListener('click', async () => {
   const text = ta.value;
   if (!text.trim()) return;
   try { await navigator.clipboard.writeText(text); } catch { return toast(NO_COPY, 6000); }
-  learn(text);
-  toast('Copied');
+  learn(text, 'Copied');
 });
 $('undo').addEventListener('click', undo);
 $('clear').addEventListener('click', () => setText('', 0));
