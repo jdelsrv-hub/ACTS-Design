@@ -25,20 +25,30 @@ export function editDistance(a, b) {
 }
 
 const KINDS = ['slip', 'prefix', 'sound', 'typo'];
-const WEIGHT = { slip: 1, prefix: 1, sound: 0.6 };
+const WEIGHT = { slip: 1, prefix: 1 };
+
+// Dice coefficient of letter bigrams, 0 (nothing shared) to 1 (same).
+function similarity(a, b) {
+  const grams = s => { const g = []; for (let i = 0; i < s.length - 1; i++) g.push(s.slice(i, i + 2)); return g; };
+  const ga = grams(a), gb = grams(b);
+  if (!ga.length || !gb.length) return 0;
+  let shared = 0;
+  for (const g of ga) { const i = gb.indexOf(g); if (i >= 0) { shared++; gb.splice(i, 1); } }
+  return (2 * shared) / (ga.length + grams(b).length);
+}
 
 export function createMatcher(words) {
-  const codes = new Map();    // word -> [primary, secondary]
+  const codes = new Map();    // word -> primary metaphone code
   const byLetter = new Map(); // first letter -> words
   const byCode = new Map();   // first character of a metaphone code -> words
   const push = (map, key, word) => { if (!map.has(key)) map.set(key, []); map.get(key).push(word); };
 
   function add(word) {
     if (!word || codes.has(word)) return;
-    const pair = doubleMetaphone(word);
-    codes.set(word, pair);
+    const code = doubleMetaphone(word)[0];
+    codes.set(word, code);
     push(byLetter, word.charAt(0), word);
-    for (const first of new Set(pair.filter(Boolean).map(code => code[0]))) push(byCode, first, word);
+    if (code) push(byCode, code[0], word);
   }
   for (const word of words) add(word);
 
@@ -60,7 +70,8 @@ export function createMatcher(words) {
       const code = n >= 3 ? doubleMetaphone(partial)[0] : '';
       if (code.length >= 2) {
         for (const word of byCode.get(code[0]) ?? []) {
-          if (codes.get(word).some(c => c && (c === code || (n >= 5 && c.startsWith(code))))) offer(word, 'sound', WEIGHT.sound);
+          const c = codes.get(word);
+          if (c === code || (n >= 5 && c.startsWith(code))) offer(word, 'sound', 0.4 + 0.2 * similarity(partial, word));
         }
       }
 
@@ -86,11 +97,12 @@ export function createMatcher(words) {
     const all = candidates(word, slipsFor);
     const slips = slipsFor(word);
     if (slips.length) return slips.reduce((a, b) => (b.count > a.count ? b : a)).word;
+    const pool = all.filter(c => c.kind !== 'prefix' && c.weight >= 0.4);
+    const maxRank = Math.max(0, ...pool.map(c => rank(c.word)));
+    // Weight leads; frequency breaks near-ties.
+    const score = c => c.weight * (1 + rank(c.word) / (1 + maxRank));
     let top = null;
-    for (const c of all) {
-      if (c.kind === 'prefix' || c.weight < 0.5) continue;
-      if (!top || c.weight > top.weight || (c.weight === top.weight && rank(c.word) > rank(top.word))) top = c;
-    }
+    for (const c of pool) if (!top || score(c) > score(top)) top = c;
     return top ? top.word : null;
   }
 
