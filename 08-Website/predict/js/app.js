@@ -9,7 +9,7 @@ import { withDefaults } from './settings.js';
 import { makeBackup, readBackup } from './backup.js';
 import { speak, listVoices } from './speech.js';
 
-const NO_MEMORY = "Can't remember things right now. Make a backup in settings.";
+const NO_MEMORY = "Can't remember things right now. Make a backup in What it has learned.";
 const NO_SPEECH = "Your phone's text-to-speech is off. Turn it on in your phone's accessibility settings.";
 const NO_COPY = "Couldn't copy. Long-press the text and choose Copy.";
 const STARTER_PHRASES = ['I need help', 'Thank you', 'Yes', 'No', 'Please wait'];
@@ -53,7 +53,7 @@ let saveTimer = null;
 function writeMemory() {
   clearTimeout(saveTimer);
   saveTimer = null;
-  store.set('memory', memory.toJSON()).catch(() => showBanner(NO_MEMORY));
+  return store.set('memory', memory.toJSON()).then(() => true, () => { showBanner(NO_MEMORY); return false; });
 }
 function saveMemory() {
   clearTimeout(saveTimer);
@@ -82,8 +82,8 @@ function toast(message, ms = 2000, pin) {
     nodes.push(b);
   }
   toastBox.replaceChildren(...nodes);
-  toastBox.hidePopover(); // hide then show moves it above any dialog opened since
-  toastBox.showPopover();
+  toastBox.hidePopover?.(); // hide then show moves it above any dialog opened since
+  toastBox.showPopover?.();
   toastTimer = setTimeout(() => toastBox.replaceChildren(), ms);
 }
 
@@ -409,20 +409,25 @@ learnedBox.addEventListener('click', e => {
     // Focus moves on before the row goes, so a keyboard user isn't dropped at the top.
     ((item.nextElementSibling ?? item.previousElementSibling)?.querySelector('button') ?? learnedBox.querySelector('.close')).focus();
     item.remove();
-    if (name === 'del-word') { memory.deleteWord(id); update(true); } // shortcut: the matcher keeps the word, but rank reads memory, so it stops being suggested; rebuilt on next start
+    if (name === 'del-word') { memory.deleteWord(id); wordsDeleted = true; }
     else { memory.deletePhrase(id); renderPhrases(); }
   }
   saveMemory();
 });
 
-// Replaces the learned words and phrases: the matcher has no remove, so it is rebuilt.
+// The matcher has no remove, so it is rebuilt after words are deleted (when the page closes) or replaced.
+let wordsDeleted = false;
+const rebuildMatcher = () => { matcher = createMatcher([...wordList.words(), ...memory.knownWords()]); };
+learnedBox.addEventListener('close', () => { if (wordsDeleted) { wordsDeleted = false; rebuildMatcher(); update(true); } });
+
+// Replaces the learned words and phrases. Resolves true once saved.
 function relearn() {
-  matcher = createMatcher([...wordList.words(), ...memory.knownWords()]);
+  rebuildMatcher();
   lastLearned = lastPick = null;
   renderPhrases();
   renderLearned();
   update(true);
-  saveMemory();
+  return writeMemory();
 }
 
 function ask(message, yes) {
@@ -452,12 +457,11 @@ $('restore-file').addEventListener('change', async e => {
   applySettings();
   store.set('settings', settings).catch(() => showBanner(NO_MEMORY));
   renderSettings();
-  relearn();
-  toast('Restored');
+  if (await relearn()) toast('Restored');
 });
 $('start-fresh').addEventListener('click', async () => {
   if (!await ask('Delete everything it has learned? Your settings stay.', 'Delete')) return;
   memory.clearLearned();
-  relearn();
-  toast('Started fresh');
+  STARTER_PHRASES.forEach(p => memory.pinPhrase(p)); // "I need help" is a safety aid
+  if (await relearn()) toast('Started fresh');
 });

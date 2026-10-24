@@ -56,7 +56,7 @@ button {
 #toast:empty { display: none; }
 /* At the top so it never covers Undo. It swallows taps, so a tap on it can't hit a quick phrase underneath. */
 /* A popover, so it shows above an open dialog. */
-#toast { position: fixed; inset: 8px 8px auto; width: auto; height: auto; margin: 0; padding: 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--field); font-weight: 700; text-align: center; }
+#toast { position: fixed; inset: 8px 8px auto; width: auto; height: auto; margin: 0; padding: 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--field); color: var(--fg); font-weight: 700; text-align: center; }
 #toast button { margin-left: 12px; }
 #banner { order: -1; flex: none; margin: 0; padding: 8px 12px; font-size: 0.75em; border: 2px solid var(--line); border-radius: 12px; background: var(--field); }
 
