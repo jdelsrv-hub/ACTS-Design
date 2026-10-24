@@ -1,7 +1,7 @@
 import { test, eq, ok, near } from './harness.js';
 import { personalWeight, gatherCandidates, rank } from '../js/mixer.js';
 import { createMemory } from '../js/memory.js';
-import { parseWordList } from '../js/wordlist.js';
+import { parseWordList, loadWordList } from '../js/wordlist.js';
 import { createMatcher } from '../js/spelling.js';
 
 const setup = (list, memory = createMemory()) => {
@@ -44,4 +44,13 @@ test('duplicates are dropped and ties keep input order', () => {
   const s = setup('alpha 10\nbeta 10');
   eq(rank([{ word: 'beta', kind: 'prefix', weight: 1 }, { word: 'alpha', kind: 'prefix', weight: 1 }, { word: 'beta', kind: 'sound', weight: 0.6 }],
     { context: [], limit: 5, ...s }), ['beta', 'alpha']);
+});
+
+// Acceptance bar: the intended word is in the top 3 shown. One tap teaches the slip, after which it ranks first.
+test('real list: fone and nite show phone and night in the top 3', async () => {
+  const wordList = await loadWordList('../data/words.txt'); const memory = createMemory();
+  const s = { memory, wordList, matcher: createMatcher(wordList.words()) };
+  for (const [partial, want] of [['fone', 'phone'], ['nite', 'night']]) {
+    const top = suggest(s, partial, [], 3); ok(top.includes(want), `${partial}: top 3 was ${JSON.stringify(top)}`);
+  }
 });
