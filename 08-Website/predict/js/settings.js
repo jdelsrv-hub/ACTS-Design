@@ -1,5 +1,5 @@
 export const DEFAULTS = { textSize: 'large', contrast: 'normal', font: 'system', suggestionCount: 3,
-  tapSafety: false, speakEachWord: false, clearAfterSpeak: false, phraseSpeaks: false, voiceURI: null, rate: 1 };
+  tapSafety: false, speakEachWord: false, clearAfterSpeak: false, phraseSpeaks: false, voiceURI: null, rate: 1, paused: false };
 
 const CHOICES = {
   textSize: ['large', 'extra-large', 'huge'],

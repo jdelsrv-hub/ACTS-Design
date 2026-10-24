@@ -55,13 +55,39 @@ button {
 
 #toast:empty { display: none; }
 /* At the top so it never covers Undo. It swallows taps, so a tap on it can't hit a quick phrase underneath. */
-#toast { position: fixed; top: 8px; left: 8px; right: 8px; padding: 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--field); font-weight: 700; text-align: center; }
+/* A popover, so it shows above an open dialog. */
+#toast { position: fixed; inset: 8px 8px auto; width: auto; height: auto; margin: 0; padding: 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--field); font-weight: 700; text-align: center; }
 #toast button { margin-left: 12px; }
 #banner { order: -1; flex: none; margin: 0; padding: 8px 12px; font-size: 0.75em; border: 2px solid var(--line); border-radius: 12px; background: var(--field); }
 
 dialog { font: inherit; color: var(--fg); background: var(--bg); border: 3px solid var(--line); border-radius: 16px; }
 dialog::backdrop { background: rgb(0 0 0 / 0.5); }
-dialog form { display: grid; gap: 8px; }
+/* minmax(0, 1fr) stops a long voice name or a wide control from stretching the whole dialog. */
+dialog form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 #menu-word, #recent-title { margin: 0; font-weight: 700; }
 #recent-list { display: grid; gap: 8px; max-height: 50dvh; overflow-y: auto; }
 #recent-list button { text-align: left; }
+
+#settings, #learned, #confirm { width: calc(100% - 16px); max-width: 32em; }
+.title { margin: 0; font-weight: 700; }
+h2 { margin: 8px 0 0; font-size: 1em; }
+fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 4px; }
+legend { padding: 0; font-weight: 700; }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg button { flex: 1 1 auto; }
+[aria-pressed="true"] { background: var(--best); color: var(--bg); font-weight: 700; }
+[aria-pressed="true"]::before { content: "✓ "; }
+.switch { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+.switch input { flex: none; width: 40px; height: 40px; margin: 0; }
+.field { display: grid; gap: 4px; font-weight: 700; }
+.field select, .field textarea { width: 100%; font: inherit; color: var(--fg); background: var(--field); border: 2px solid var(--line); border-radius: 12px; min-height: 48px; padding: 4px 8px; }
+.field input[type="range"] { width: 100%; height: 48px; margin: 0; }
+.hint { font-weight: 400; font-size: 0.75em; }
+.trio { display: flex; flex-wrap: wrap; gap: 8px; }
+.trio button { flex: 1 1 auto; }
+.list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.list li > span:first-child { flex: 1 1 6em; overflow-wrap: anywhere; }
+.list .count { font-size: 0.75em; }
+/* Stays in view at the bottom of a long dialog. */
+.close { position: sticky; bottom: 0; }

@@ -24,6 +24,8 @@
   <button type="button" id="undo"><span aria-hidden="true">↩</span>Undo</button>
   <button type="button" id="clear"><span aria-hidden="true">✕</span>Clear</button>
   <button type="button" id="open-recent"><span aria-hidden="true">🕘</span>Recent</button>
+  <button type="button" id="open-learned"><span aria-hidden="true">🧠</span>Learned</button>
+  <button type="button" id="open-settings"><span aria-hidden="true">⚙</span>Settings</button>
 </div>
 <dialog id="menu" aria-labelledby="menu-word">
   <form method="dialog">
@@ -40,7 +42,50 @@
     <button value="">Close</button>
   </form>
 </dialog>
-<div id="toast" role="status"></div>
+<dialog id="settings" aria-labelledby="settings-title">
+  <form method="dialog">
+    <p id="settings-title" class="title">Settings</p>
+    <fieldset data-key="textSize"><legend>Text size</legend><div class="seg"><button type="button" data-value="large">Large</button><button type="button" data-value="extra-large">Extra large</button><button type="button" data-value="huge">Huge</button></div></fieldset>
+    <fieldset data-key="contrast"><legend>Colours</legend><div class="seg"><button type="button" data-value="normal">Normal</button><button type="button" data-value="high">High contrast</button><button type="button" data-value="dark">Dark</button></div></fieldset>
+    <fieldset data-key="font"><legend>Font</legend><div class="seg"><button type="button" data-value="system">System</button><button type="button" data-value="hyperlegible">Hyperlegible</button></div></fieldset>
+    <fieldset data-key="suggestionCount"><legend>Suggestions shown</legend><div class="seg"><button type="button" data-value="3">3</button><button type="button" data-value="4">4</button><button type="button" data-value="5">5</button></div></fieldset>
+    <label class="switch"><input type="checkbox" role="switch" data-key="tapSafety"><span>Hold a suggestion a moment to pick it</span></label>
+    <label class="switch"><input type="checkbox" role="switch" data-key="speakEachWord"><span>Say each word when I pick it</span></label>
+    <label class="switch"><input type="checkbox" role="switch" data-key="clearAfterSpeak"><span>Clear the text after Speak</span></label>
+    <label class="switch"><input type="checkbox" role="switch" data-key="phraseSpeaks"><span>Quick phrases speak when tapped</span></label>
+    <label class="switch"><input type="checkbox" role="switch" data-key="paused"><span>Pause learning</span></label>
+    <label class="field">Voice<select data-key="voiceURI"></select></label>
+    <label class="field">Speaking speed<input type="range" min="0.5" max="2" step="0.1" data-key="rate"></label>
+    <button type="button" id="test-voice">Test voice</button>
+    <label class="field">Starter words<span class="hint">Names, places, pets and other words you use</span><textarea id="starters" rows="3"></textarea></label>
+    <button type="button" id="add-starters" aria-label="Add starter words">Add</button>
+    <button value="" class="close">Close</button>
+  </form>
+</dialog>
+<dialog id="learned" aria-labelledby="learned-title">
+  <form method="dialog">
+    <p id="learned-title" class="title">What it has learned</p>
+    <div class="trio">
+      <button type="button" id="backup">Backup</button>
+      <button type="button" id="restore">Restore</button>
+      <button type="button" id="start-fresh">Start fresh</button>
+    </div>
+    <input type="file" id="restore-file" accept=".json,application/json" hidden>
+    <h2>Words</h2>
+    <ul id="word-list" class="list"></ul>
+    <h2>Phrases</h2>
+    <ul id="phrase-list" class="list"></ul>
+    <button value="" class="close">Close</button>
+  </form>
+</dialog>
+<dialog id="confirm" aria-labelledby="confirm-text">
+  <form method="dialog">
+    <p id="confirm-text" class="title"></p>
+    <button value="">Cancel</button>
+    <button value="yes" id="confirm-yes"></button>
+  </form>
+</dialog>
+<div id="toast" role="status" popover="manual"></div>
 <p id="banner" role="alert" hidden></p>
 </body>
 </html>
