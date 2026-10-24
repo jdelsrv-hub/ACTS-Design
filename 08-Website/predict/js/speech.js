@@ -16,13 +16,28 @@ export function listVoices() {
   });
 }
 
-export function speak(text, { voiceURI, rate }) {
-  const voices = synth()?.getVoices() ?? [];
-  if (!voices.length) return false;
-  synth().cancel();
+// Returns false only when the phone has no speech at all. A failure found later (an error,
+// or no start within 2 s) calls onFail.
+export function speak(text, { voiceURI, rate }, onFail = () => {}) {
+  const s = synth();
+  if (!s) return false;
+  s.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.voice = voices.find(v => v.voiceURI === voiceURI) ?? null;
+  // An empty or late voice list, or a voice that's gone, just means the phone's default voice.
+  u.voice = s.getVoices().find(v => v.voiceURI === voiceURI) ?? null;
   u.rate = rate;
-  synth().speak(u);
+  let timer;
+  const settle = failed => {
+    if (!timer) return;
+    clearTimeout(timer);
+    timer = null;
+    if (failed) onFail();
+  };
+  u.addEventListener('start', () => settle(false));
+  u.addEventListener('end', () => settle(false));
+  // The next Speak cancels this one, which isn't a failure.
+  u.addEventListener('error', e => settle(e.error !== 'interrupted' && e.error !== 'canceled'));
+  timer = setTimeout(() => settle(true), 2000);
+  s.speak(u);
   return true;
 }

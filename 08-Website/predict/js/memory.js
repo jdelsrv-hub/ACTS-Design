@@ -114,6 +114,7 @@ export function createMemory(snapshot) {
     },
 
     recordSlip(typed, chosen) {
+      if (paused) return;
       const row = s.slips[typed] ??= Object.create(null);
       row[chosen] = (row[chosen] ?? 0) + 1;
     },
@@ -121,6 +122,7 @@ export function createMemory(snapshot) {
     slipsFor: typed => Object.entries(s.slips[typed] ?? {}).map(([word, count]) => ({ word, count })).sort((x, y) => y.count - x.count),
 
     penalize(prev, word) {
+      if (paused) return;
       const key = `${prev} ${word}`;
       s.penalties[key] = (s.penalties[key] ?? 0) + 1;
     },
@@ -132,10 +134,17 @@ export function createMemory(snapshot) {
     unblock(word) {
       s.blocked = s.blocked.filter(w => w !== word);
     },
+    blocked: () => [...s.blocked],
+
+    has: key => key in s.words,
 
     deleteWord(key) {
       delete s.words[key];
-      for (const gram of Object.keys(s.ngrams)) if (gram.split(' ').includes(key)) delete s.ngrams[gram];
+      for (const t of [s.ngrams, s.penalties]) for (const k of Object.keys(t)) if (k.split(' ').includes(key)) delete t[k];
+      for (const typed of Object.keys(s.slips)) {
+        delete s.slips[typed][key];
+        if (!Object.keys(s.slips[typed]).length) delete s.slips[typed];
+      }
       totalCache = null;
       reindex();
     },
@@ -159,8 +168,8 @@ export function createMemory(snapshot) {
     words: () => Object.entries(s.words).map(([key, e]) => ({ key, display: e.display ?? key, count: e.count })).sort((x, y) => y.count - x.count),
 
     clearLearned() {
+      // Blocked words stay: they are the person's choice, not something it learned.
       for (const t of ['words', 'ngrams', 'phrases', 'slips', 'penalties']) s[t] = table();
-      s.blocked = [];
       s.recent = [];
       s.pins = [];
       s.committedWords = 0;

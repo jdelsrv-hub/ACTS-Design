@@ -11,8 +11,14 @@ test('penalty compounds and only hits its own context', () => {
   m.penalize('the', 'cat'); m.penalize('the', 'cat'); near(m.score(['the'], 'cat', T), the / 4); near(m.score(['a'], 'cat', T), a);
 });
 test('blocked', () => { const m = createMemory(); m.block('darn'); ok(m.isBlocked('darn')); m.unblock('darn'); ok(!m.isBlocked('darn')); });
+test('blocked lists blocked words in order', () => { const m = createMemory(); m.block('darn'); m.block('heck'); m.block('darn'); eq(m.blocked(), ['darn', 'heck']); m.unblock('darn'); eq(m.blocked(), ['heck']); });
 test('deleteWord removes its ngrams', () => { const m = createMemory(); m.commit('see you', T); m.commit('see you', T); m.deleteWord('you'); eq(m.followers(['see'], 5), []); });
 test('deleteWord keeps unrelated learning', () => { const m = createMemory(); m.commit('see you', T); m.commit('go home', T); m.deleteWord('you'); eq(m.followers(['go'], 5), ['home']); eq(m.words().map(w => w.key).sort(), ['go', 'home', 'see']); });
+test('deleteWord removes it from slips and penalties', () => {
+  const m = createMemory(); m.commit('see you', T); m.recordSlip('yu', 'you'); m.recordSlip('yu', 'yo'); m.recordSlip('yoo', 'you');
+  m.penalize('see', 'you'); m.penalize('you', 'see'); m.penalize('see', 'me'); m.deleteWord('you');
+  eq(m.slipsFor('yu'), [{word: 'yo', count: 1}]); eq(Object.keys(m.toJSON().slips), ['yu']); eq(Object.keys(m.toJSON().penalties), ['see me']);
+});
 test('deletePhrase removes it from phrases, pins and recent', () => {
   const m = createMemory(); m.commit('I need help', T); m.pinPhrase('I need help'); m.deletePhrase('I need help');
   eq(m.phrases(), []); eq(m.pinned(), []); eq(m.recent(), []);
@@ -34,10 +40,10 @@ test('phrases and words lists', () => {
   eq(m.phrases(), [{text: 'hi Maria', count: 2, pinned: true}]);
   eq(m.words().find(w => w.key === 'maria'), {key: 'maria', display: 'Maria', count: 2});
 });
-test('clearLearned empties everything but paused', () => {
+test('clearLearned empties everything but paused and blocked words', () => {
   const m = createMemory(); m.commit('see you soon', T); m.recordSlip('teh', 'the'); m.penalize('see', 'you'); m.block('darn'); m.pinPhrase('see you soon'); m.paused = true;
   m.clearLearned();
-  eq(m.words(), []); eq(m.phrases(), []); eq(m.pinned(), []); eq(m.recent(), []); eq(m.slipsFor('teh'), []); ok(!m.isBlocked('darn'));
+  eq(m.words(), []); eq(m.phrases(), []); eq(m.pinned(), []); eq(m.recent(), []); eq(m.slipsFor('teh'), []); ok(m.isBlocked('darn'));
   eq(m.committedWords, 0); eq(m.followers(['see'], 5), []); ok(m.paused);
   eq(Object.keys(m.toJSON().penalties), []);
 });

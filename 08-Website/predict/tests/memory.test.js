@@ -6,6 +6,10 @@ test('learns on commit only', () => { const m = createMemory(); eq(m.knownWords(
 test('empty commit is ignored', () => { const m = createMemory(); m.commit('   ', T); eq(m.committedWords, 0); });
 test('text with no words is ignored', () => { const m = createMemory(); m.commit('123 🐱', T); eq(m.committedWords, 0); eq(m.recent(), []); });
 test('paused learns nothing, not even recent', () => { const m = createMemory(); m.paused = true; m.commit('secret words', T); eq(m.committedWords, 0); eq(m.recent(), []); });
+test('paused learns no slips or penalties', () => {
+  const m = createMemory(); m.commit('the cat', T); const before = m.score(['the'], 'cat', T); m.paused = true;
+  m.recordSlip('teh', 'the'); m.penalize('the', 'cat'); eq(m.slipsFor('teh'), []); eq(m.score(['the'], 'cat', T), before);
+});
 test('context beats plain frequency', () => {
   const m = createMemory(); for (let i = 0; i < 5; i++) m.commit('the store', T); m.commit('from the clinic', T);
   ok(m.score(['from', 'the'], 'clinic', T) > m.score(['from', 'the'], 'store', T));
