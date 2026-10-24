@@ -16,28 +16,36 @@ export function listVoices() {
   });
 }
 
+let settleCurrent = () => {}; // the utterance now speaking, settled before it is cancelled so its 2 s wait can't report a failure
+
 // Returns false only when the phone has no speech at all. A failure found later (an error,
-// or no start within 2 s) calls onFail.
-export function speak(text, { voiceURI, rate }, onFail = () => {}) {
+// or no start within 2 s) calls onFail, and a start after that calls onLateStart.
+export function speak(text, { voiceURI, rate }, onFail = () => {}, onLateStart = () => {}) {
   const s = synth();
   if (!s) return false;
+  settleCurrent();
   s.cancel();
   const u = new SpeechSynthesisUtterance(text);
   // An empty or late voice list, or a voice that's gone, just means the phone's default voice.
   u.voice = s.getVoices().find(v => v.voiceURI === voiceURI) ?? null;
   u.rate = rate;
-  let timer;
+  let timer, late = false;
   const settle = failed => {
     if (!timer) return;
     clearTimeout(timer);
     timer = null;
     if (failed) onFail();
   };
-  u.addEventListener('start', () => settle(false));
+  settleCurrent = () => { late = false; settle(false); };
+  u.addEventListener('start', () => {
+    if (late) onLateStart();
+    late = false;
+    settle(false);
+  });
   u.addEventListener('end', () => settle(false));
-  // The next Speak cancels this one, which isn't a failure.
-  u.addEventListener('error', e => settle(e.error !== 'interrupted' && e.error !== 'canceled'));
-  timer = setTimeout(() => settle(true), 2000);
+  // An error with no code says nothing, so the 2 s wait still decides. The next Speak cancelling this one isn't a failure.
+  u.addEventListener('error', e => { if (e.error) settle(e.error !== 'interrupted' && e.error !== 'canceled'); });
+  timer = setTimeout(() => { late = true; settle(true); }, 2000);
   s.speak(u);
   return true;
 }

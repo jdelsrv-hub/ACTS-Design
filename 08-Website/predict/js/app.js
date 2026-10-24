@@ -149,8 +149,14 @@ function learn(text, note, ms = 2000) {
 
 // A failure can come after a pin offer is up, and an offer is made once only, so it is kept.
 const noSpeech = () => toast(toastPin ? `${NO_SPEECH} You say "${toastPin}" a lot.` : NO_SPEECH, 6000, toastPin);
+// Speech started late after all, so the failure message goes, but not a pin offer in it.
+function speechStarted() {
+  if (!toastBox.textContent.startsWith(NO_SPEECH)) return;
+  if (toastPin) toast(`You say "${toastPin}" a lot.`, 6000, toastPin);
+  else hideToast();
+}
 function say(text) {
-  if (!speak(text, settings, noSpeech)) noSpeech();
+  if (!speak(text, settings, noSpeech, speechStarted)) noSpeech();
 }
 
 function renderPhrases() {
@@ -322,7 +328,7 @@ for (const id of ['actions', 'phrases', 'toast']) $(id).addEventListener('pointe
 $('speak').addEventListener('click', () => {
   const text = ta.value;
   if (!text.trim()) return;
-  const spoke = speak(text, settings, noSpeech);
+  const spoke = speak(text, settings, noSpeech, speechStarted);
   learn(text, spoke ? '' : NO_SPEECH, 6000);
   if (settings.clearAfterSpeak) setText('', 0);
 });

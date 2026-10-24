@@ -62,6 +62,27 @@ test('starting to speak is not a failure', async () => {
     speak('hi', settings, () => fails++); fire(synth.calls[1], 'start'); flush(); eq(fails, 0);
   });
 });
+test('speaking again before the first starts is not a failure', async () => {
+  await fake([], (synth, timers, flush) => {
+    let fails = 0;
+    speak('one', settings, () => fails++); speak('two', settings, () => fails++); fire(synth.calls[3], 'start'); flush(); eq(fails, 0);
+  });
+});
+test('an error with no code is not a failure, and the 2 s wait still runs', async () => {
+  await fake([], (synth, timers) => {
+    let fails = 0;
+    speak('hi', settings, () => fails++); fire(synth.calls[1], 'error'); eq([fails, timers.size], [0, 1]);
+  });
+});
+test('a start after the 2 s failure reports the recovery', async () => {
+  await fake([], (synth, timers, flush) => {
+    let fails = 0, recovered = 0;
+    speak('hi', settings, () => fails++, () => recovered++);
+    fire(synth.calls[1], 'start'); eq(recovered, 0);
+    speak('late', settings, () => fails++, () => recovered++);
+    flush(); fire(synth.calls[3], 'start'); eq([fails, recovered], [1, 1]);
+  });
+});
 test('listVoices gives up after 1 s when no voices ever load', async () => {
   await fake([], async (synth, timers, flush) => {
     const voices = listVoices();
