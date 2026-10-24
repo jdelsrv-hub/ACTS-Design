@@ -54,3 +54,16 @@ test('real list: fone and nite show phone and night in the top 3', async () => {
     const top = suggest(s, partial, [], 3); ok(top.includes(want), `${partial}: top 3 was ${JSON.stringify(top)}`);
   }
 });
+
+test('starter words show before more common words', async () => {
+  const wordList = await loadWordList('../data/words.txt'); const memory = createMemory();
+  memory.addStarterWords(['Maria']);
+  const s = { memory, wordList, matcher: createMatcher([...wordList.words(), ...memory.knownWords()]) };
+  eq(suggest(s, 'ma', [], 3)[0], 'maria');
+});
+
+test('a word you have used beats a more common one you have not', () => {
+  const s = setup('class 1000\nclinic 1');
+  s.memory.commit('clinic');
+  eq(suggest(s, 'cl')[0], 'clinic');
+});

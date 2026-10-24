@@ -23,8 +23,9 @@ export function rank(cands, { context, memory, wordList, limit, now = Date.now()
   const wp = personalWeight(memory.committedWords);
   const final = r => r.weight * (wp * (maxP > 0 ? r.p / maxP : 0) + (1 - wp) * (maxL > 0 ? r.l / maxL : 0));
   return rows
-    .map(r => [r.word, final(r)])
-    .sort((a, b) => b[1] - a[1])
+    .map(r => [r.word, final(r), r.p > 0])
+    // Words the person has used come first even while the personal weight is still tiny (fresh install, starter words).
+    .sort((a, b) => b[2] - a[2] || b[1] - a[1])
     .slice(0, limit)
     .map(([word]) => word);
 }
