@@ -5,6 +5,18 @@ Filter: kept lines whose word matches ^[a-z]+('[a-z]+)?$ (lowercase ASCII letter
 most one apostrophe part), in the original order, and stopped at the first 20,000.
 Each line is "word count".
 
+Then removed profanity, sexual slang and slurs (2026-10-24), so a fresh install never offers
+them. The person can still type any of these, and words they speak or copy are learned as usual.
+Removed: any word containing fuck, shit, cunt, nigg, fagg, motherf, bitch, whore, slut, puss,
+porn, wank, dickhead, asshole, arsehole, douche, cocksuck, blowjob or dildo, plus these words:
+anal anus aroused arse ass asses badass bastard bastards bimbo boner boob boobies boobs booby
+bugger buggers cock cocks crap crappy craps cripple crippled cum dick dicks dicky dumbass dyke
+fag fags fatso goddamn goddamned gypsies gypsy ho hoe homo hooker hookers horny hos humping
+incest jackass jap japs kraut krauts midget molested negro negroes orgasm orgasms pecker
+pedophile perv pimp pimps piss pissed pisses pissing prick pricks queer rape raped rapes raping
+rapist rapists retard retarded schmuck shag shagging shite skank slag tit tits titties titty twat
+Kept as mild everyday words: hell, damn, damned. That left 19,854 lines.
+
 Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0),
 https://creativecommons.org/licenses/by-sa/4.0/
 Data from OpenSubtitles via hermitdave/FrequencyWords. This derived file is shared under

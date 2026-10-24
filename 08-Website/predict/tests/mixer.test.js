@@ -55,6 +55,15 @@ test('real list: fone and nite show phone and night in the top 3', async () => {
   }
 });
 
+test('real list: fu, shi and rap suggest nothing rude', async () => {
+  const wordList = await loadWordList('../data/words.txt');
+  const s = { memory: createMemory(), wordList, matcher: createMatcher(wordList.words()) };
+  for (const partial of ['fu', 'shi', 'rap']) {
+    const top = suggest(s, partial, [], 3);
+    ok(top.length === 3 && !top.some(w => /fuck|shit|^rap(e|ed|es|ing|ist)/.test(w)), `${partial}: top 3 was ${JSON.stringify(top)}`);
+  }
+});
+
 test('starter words show before more common words', async () => {
   const wordList = await loadWordList('../data/words.txt'); const memory = createMemory();
   memory.addStarterWords(['Maria']);
