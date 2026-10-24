@@ -9,6 +9,8 @@ export function openStore(idb = globalThis.indexedDB, name = 'acts-predict') {
   if (!idb) return Promise.resolve(memoryStore());
   return new Promise(resolve => {
     const fallback = () => resolve(memoryStore());
+    // Some browsers never answer an open (no success, error or blocked), and the app must still start.
+    setTimeout(fallback, 3000);
     let req;
     try { req = idb.open(name, 1); } catch { return fallback(); }
     req.onupgradeneeded = () => req.result.createObjectStore('kv');

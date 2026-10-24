@@ -21,7 +21,8 @@
 [hidden] { display: none !important; }
 
 html { font: var(--text-size)/1.4 var(--font); background: var(--bg); color: var(--fg); }
-body { margin: 0; height: 100dvh; display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+/* --vh is the visible height, set from app.js where visualViewport exists (it shrinks for the iPhone keyboard). */
+body { margin: 0; height: var(--vh, 100dvh); display: flex; flex-direction: column; gap: 8px; padding: 8px; }
 
 button {
   font: inherit; color: var(--fg); background: var(--btn);
@@ -47,6 +48,8 @@ button {
 #suggestions { display: flex; flex-wrap: wrap; gap: 8px; flex: none; min-height: 56px; }
 .sugg { flex: 1 1 auto; min-height: 56px; }
 .sugg.best { outline: 3px solid var(--best); }
+/* Tap safety: filled once letting go will choose it. */
+.sugg.armed { background: var(--best); color: var(--bg); outline: 6px solid var(--fg); }
 
 #actions { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
 #actions button { flex: 1 1 3em; display: grid; justify-items: center; padding: 4px 2px; font-size: 0.65em; line-height: 1.2; }

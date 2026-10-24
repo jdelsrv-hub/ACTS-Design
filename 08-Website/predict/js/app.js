@@ -1,6 +1,6 @@
 // Writing screen: wires the text box, suggestion buttons and long-press menu to the engine.
 import { splitContext, capitalizeIfStart, applySuggestion, shouldLearn, tokenize } from './text.js';
-import { loadWordList } from './wordlist.js';
+import { loadWordList, parseWordList } from './wordlist.js';
 import { createMemory } from './memory.js';
 import { createMatcher } from './spelling.js';
 import { gatherCandidates, rank } from './mixer.js';
@@ -17,6 +17,15 @@ const $ = id => document.getElementById(id);
 const ta = $('text'), mirror = $('mirror'), sugg = $('suggestions'), menu = $('menu'), banner = $('banner');
 const showBanner = text => { banner.textContent = text; banner.hidden = false; };
 
+// iOS ignores interactive-widget and doesn't shrink 100dvh for its keyboard, so the page follows the visible area.
+// Times scale, so a pinch zoom doesn't squash the layout.
+const vv = window.visualViewport;
+if (vv) {
+  const fit = () => document.documentElement.style.setProperty('--vh', `${vv.height * vv.scale}px`);
+  vv.addEventListener('resize', fit);
+  fit();
+}
+
 let store = await openStore(), memory, settings, wordList, saved;
 try {
   saved = await store.get('memory');
@@ -31,9 +40,10 @@ try {
 }
 try {
   wordList = await loadWordList();
-} catch (error) {
-  showBanner("Can't load the word list. Close the app and open it again.");
-  throw error;
+} catch {
+  // Speak, Copy and quick phrases must still work, so carry on with no word list.
+  wordList = parseWordList('');
+  showBanner("Couldn't load the word list. Suggestions will be limited. Close the app and open it again.");
 }
 memory.paused = settings.paused;
 let matcher = createMatcher([...wordList.words(), ...memory.knownWords()]);
@@ -66,16 +76,24 @@ if (!saved) { // first start
   STARTER_PHRASES.forEach(p => memory.pinPhrase(p));
   saveMemory();
 }
-listVoices(); // Chrome only starts loading its voices when asked, and the first Speak shouldn't fail for that
+listVoices(); // Chrome only starts loading its voices when asked, and the first Speak should find the chosen one
+navigator.storage?.persist?.().catch(() => {}); // asks the browser not to clear what it has learned when space runs low
 
 let lastLearned = null; // the sentence last committed, so Speak then Copy learns it once
 const undoStack = [];   // {text, cursor}, newest last, max 50
+let lastBlock = null;  // the word just blocked, while blocking it is still the last thing done, so Undo can allow it again
 const toastBox = $('toast');
-let toastTimer;
+let toastTimer, toastPin = null;
 
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastPin = null;
+  toastBox.replaceChildren();
+}
 function toast(message, ms = 2000, pin) {
   clearTimeout(toastTimer);
   const nodes = [message];
+  toastPin = pin;
   if (pin) {
     const b = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Pin it' });
     b.addEventListener('click', () => { memory.pinPhrase(pin); saveMemory(); renderPhrases(); toast(`Pinned "${pin}"`); });
@@ -84,8 +102,9 @@ function toast(message, ms = 2000, pin) {
   toastBox.replaceChildren(...nodes);
   toastBox.hidePopover?.(); // hide then show moves it above any dialog opened since
   toastBox.showPopover?.();
-  toastTimer = setTimeout(() => toastBox.replaceChildren(), ms);
+  toastTimer = setTimeout(hideToast, ms);
 }
+toastBox.addEventListener('click', e => { if (!e.target.closest('button')) hideToast(); });
 
 // Every change the app makes goes through here, so each one can be undone.
 function remember() {
@@ -98,10 +117,17 @@ function setText(text, cursor, undoable = true) {
   ta.value = text;
   ta.setSelectionRange(cursor, cursor);
   ta.focus();
-  lastPick = lastLearned = null; // a changed text is a new message, and there is no pick or fix left to judge
+  lastPick = lastLearned = lastBlock = null; // a changed text is a new message, and there is no pick or fix left to judge
   update(true);
 }
 function undo() {
+  if (lastBlock) {
+    memory.unblock(lastBlock);
+    saveMemory();
+    toast(`"${memory.display(lastBlock)}" can be suggested again`);
+    lastBlock = null;
+    return update(true);
+  }
   let s;
   while ((s = undoStack.pop()) && s.text === ta.value);
   if (s) setText(s.text, s.cursor, false);
@@ -109,6 +135,7 @@ function undo() {
 
 // The note (e.g. "Copied") and any pin offer share one toast: a pin is offered once only, so nothing may replace it.
 function learn(text, note, ms = 2000) {
+  lastBlock = null;
   let offer = null;
   if (shouldLearn(text, lastLearned)) {
     offer = memory.commit(text).offerPin;
@@ -120,8 +147,10 @@ function learn(text, note, ms = 2000) {
   else if (note) toast(note, ms);
 }
 
+// A failure can come after a pin offer is up, and an offer is made once only, so it is kept.
+const noSpeech = () => toast(toastPin ? `${NO_SPEECH} You say "${toastPin}" a lot.` : NO_SPEECH, 6000, toastPin);
 function say(text) {
-  if (!speak(text, settings)) toast(NO_SPEECH, 6000);
+  if (!speak(text, settings, noSpeech)) noSpeech();
 }
 
 function renderPhrases() {
@@ -140,7 +169,7 @@ function findFix(before) {
   const trimmed = before.trimEnd();
   if (trimmed === before) return null;
   const { context, partial: typed } = splitContext(trimmed);
-  if (!typed) return null;
+  if (!typed || memory.has(typed)) return null; // a word they've spoken even once (a name, say) is theirs, not a slip
   const word = matcher.suggestFix(typed, t => memory.slipsFor(t), w => wordList.freq(w));
   if (!word || memory.isBlocked(word)) return null;
   return { typed, word, prev: context.at(-1), start: trimmed.length - typed.length, end: trimmed.length };
@@ -166,14 +195,18 @@ function update(force) {
   let words = rank(gatherCandidates({ partial, context, matcher, memory, wordList }), { context, memory, wordList, limit });
   if (fix) words = [fix.word, ...words.filter(w => w !== fix.word)].slice(0, limit);
   const base = before.slice(0, before.length - partial.length);
-  render(words.map(w => [w, capitalizeIfStart(w === fix?.word ? value.slice(0, fix.start) : base, memory.display(w))]));
+  render(words.map((w, i) => {
+    const label = capitalizeIfStart(w === fix?.word ? value.slice(0, fix.start) : base, memory.display(w));
+    // Screen readers can't see the outline on the best guess or the underline on the typed word.
+    return [w, label, label + (i ? '' : ', best guess') + (w === fix?.word ? `, fix for ${fix.typed}` : '')];
+  }));
 }
 
 function render(items) {
   if (down.size) { pending = items; return; }
   pending = null;
-  sugg.replaceChildren(...items.map(([key, label], i) => {
-    const b = Object.assign(document.createElement('button'), { type: 'button', className: i ? 'sugg' : 'sugg best', textContent: label });
+  sugg.replaceChildren(...items.map(([key, label, ariaLabel], i) => {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: i ? 'sugg' : 'sugg best', textContent: label, ariaLabel });
     b.dataset.word = key;
     return b;
   }));
@@ -197,7 +230,7 @@ function choose(key) {
   matcher.add(key);
   setText(r.text, r.cursor);
   lastPick = { prev, word: key, cursor: r.cursor, text: r.text };
-  if (settings.speakEachWord) speak(memory.display(key), settings);
+  if (settings.speakEachWord) say(memory.display(key));
 }
 
 function openMenu(key) {
@@ -211,7 +244,7 @@ function openMenu(key) {
 ta.addEventListener('beforeinput', e => { if (/\s$/.test(e.data ?? '')) remember(); });
 ta.addEventListener('input', e => {
   const p = lastPick;
-  lastPick = lastLearned = null;
+  lastPick = lastLearned = lastBlock = null;
   if (p && e.inputType === 'deleteContentBackward') {
     const at = ta.selectionStart;
     // Removing just the space after the word (to type "." or ",") isn't a rejection; reaching the word is.
@@ -231,10 +264,15 @@ addEventListener('pointerdown', e => {
   if (e.isPrimary) down.clear(); // a first finger means no other is down, even if a lift was missed
   down.add(e.pointerId);
 }, true);
-let press = null, holdTimer;
+let press = null, holdTimer, armTimer;
+const disarm = () => {
+  clearTimeout(holdTimer);
+  clearTimeout(armTimer);
+  press?.b.classList.remove('armed');
+};
 for (const type of ['pointerup', 'pointercancel']) {
   addEventListener(type, e => {
-    clearTimeout(holdTimer);
+    disarm();
     down.delete(e.pointerId);
     if (!down.size && pending) render(pending);
   }, true);
@@ -244,9 +282,11 @@ sugg.addEventListener('pointerdown', e => {
   const b = e.target.closest('.sugg');
   if (!b) return;
   e.preventDefault(); // keeps focus, and so the phone's keyboard, on the text box
+  disarm();
   const p = press = { b, t: e.timeStamp, long: false };
-  clearTimeout(holdTimer);
-  holdTimer = setTimeout(() => { p.long = true; openMenu(b.dataset.word); }, 500);
+  // With tap safety, the button shows when letting go will choose, and the menu waits longer so there's time to let go.
+  if (settings.tapSafety) armTimer = setTimeout(() => b.classList.add('armed'), 300);
+  holdTimer = setTimeout(() => { p.long = true; b.classList.remove('armed'); openMenu(b.dataset.word); }, settings.tapSafety ? 1000 : 500);
 });
 sugg.addEventListener('click', e => {
   const b = e.target.closest('.sugg');
@@ -264,23 +304,23 @@ sugg.addEventListener('contextmenu', e => { // the menu key, a right-click, or t
   if (!menu.open) openMenu(b.dataset.word);
 });
 
-$('hear').addEventListener('click', () => speak(memory.display(menu.dataset.word), settings));
+$('hear').addEventListener('click', () => say(memory.display(menu.dataset.word)));
 menu.addEventListener('close', () => {
   down.clear(); // the finger that opened the menu may lift over it, out of our sight
   press = null;
-  if (menu.returnValue === 'block') { memory.block(menu.dataset.word); saveMemory(); }
+  if (menu.returnValue === 'block') { memory.block(lastBlock = menu.dataset.word); saveMemory(); }
   update(true);
 });
 
 update();
 
 // The buttons keep focus on the text box, and so the phone's keyboard.
-for (const id of ['actions', 'phrases']) $(id).addEventListener('pointerdown', e => e.preventDefault());
+for (const id of ['actions', 'phrases', 'toast']) $(id).addEventListener('pointerdown', e => e.preventDefault());
 
 $('speak').addEventListener('click', () => {
   const text = ta.value;
   if (!text.trim()) return;
-  const spoke = speak(text, settings);
+  const spoke = speak(text, settings, noSpeech);
   learn(text, spoke ? '' : NO_SPEECH, 6000);
   if (settings.clearAfterSpeak) setText('', 0);
 });
@@ -392,6 +432,7 @@ function renderLearned() {
   const fill = (id, items) => $(id).replaceChildren(...(items.length ? items : [li('Nothing yet.')]));
   fill('word-list', memory.words().map(w => li(span(w.display), span(`×${w.count}`, 'count'), act('Delete', `Delete ${w.display}`, 'del-word', w.key))));
   fill('phrase-list', memory.phrases().map(p => li(span(p.text), pinButton(p.text, p.pinned), act('Delete', `Delete "${p.text}"`, 'del-phrase', p.text))));
+  fill('blocked-list', memory.blocked().map(w => li(span(memory.display(w)), act('Allow again', `Allow ${memory.display(w)} again`, 'unblock', w))));
 }
 
 $('open-learned').addEventListener('click', () => { renderLearned(); learnedBox.showModal(); });
@@ -410,6 +451,7 @@ learnedBox.addEventListener('click', e => {
     ((item.nextElementSibling ?? item.previousElementSibling)?.querySelector('button') ?? learnedBox.querySelector('.close')).focus();
     item.remove();
     if (name === 'del-word') { memory.deleteWord(id); wordsDeleted = true; }
+    else if (name === 'unblock') { memory.unblock(id); lastBlock = null; }
     else { memory.deletePhrase(id); renderPhrases(); }
   }
   saveMemory();
@@ -418,7 +460,10 @@ learnedBox.addEventListener('click', e => {
 // The matcher has no remove, so it is rebuilt after words are deleted (when the page closes) or replaced.
 let wordsDeleted = false;
 const rebuildMatcher = () => { matcher = createMatcher([...wordList.words(), ...memory.knownWords()]); };
-learnedBox.addEventListener('close', () => { if (wordsDeleted) { wordsDeleted = false; rebuildMatcher(); update(true); } });
+learnedBox.addEventListener('close', () => {
+  if (wordsDeleted) { wordsDeleted = false; rebuildMatcher(); }
+  update(true); // a word allowed again may belong in the suggestions now
+});
 
 // Replaces the learned words and phrases. Resolves true once saved.
 function relearn() {
