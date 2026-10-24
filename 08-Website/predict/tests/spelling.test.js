@@ -43,11 +43,11 @@ test('teh is a typo for the, with no sound matches', () => {
 test('suggestFix uses the slip with the highest count', () =>
   eq(f.suggestFix('becuz', () => [{word: 'clinic', count: 1}, {word: 'because', count: 5}], () => 0), 'because'));
 
-// fone -> phone and nite -> night are not asserted via suggestFix: under the round-2 rule 'find' (fone) and 'not' (nite) win on frequency. See the task 5 report.
+// nite -> night is not asserted via suggestFix: frequency can favour another sound match (see the task 5 report).
 test('suggestFix on the real list: teh and becuz', async () => {
   const list = await loadWordList('../data/words.txt'); const real = createMatcher(list.words());
   const fix = w => real.suggestFix(w, none, x => list.freq(x));
-  eq(fix('teh'), 'the'); eq(fix('becuz'), 'because');
+  eq(fix('fone'), 'phone'); eq(fix('teh'), 'the'); eq(fix('becuz'), 'because');
   const sounds = (p) => real.candidates(p, none).filter(c => c.kind === 'sound').map(c => c.word);
   ok(sounds('fone').includes('phone') && sounds('nite').includes('night'), 'phone and night are still sound matches');
 });

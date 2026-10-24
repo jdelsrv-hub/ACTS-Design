@@ -97,7 +97,9 @@ export function createMatcher(words) {
     const all = candidates(word, slipsFor);
     const slips = slipsFor(word);
     if (slips.length) return slips.reduce((a, b) => (b.count > a.count ? b : a)).word;
-    const pool = all.filter(c => c.kind !== 'prefix' && c.weight >= 0.4);
+    const fuzzy = all.filter(c => c.kind !== 'prefix' && c.weight >= 0.4);
+    // A sound match is a better fix than a typo, so typos only compete when there is none.
+    const pool = fuzzy.some(c => c.kind === 'sound') ? fuzzy.filter(c => c.kind === 'sound') : fuzzy;
     const maxRank = Math.max(0, ...pool.map(c => rank(c.word)));
     // Weight leads; frequency breaks near-ties.
     const score = c => c.weight * (1 + rank(c.word) / (1 + maxRank));
