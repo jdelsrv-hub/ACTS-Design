@@ -7,15 +7,20 @@ Each line is "word count".
 
 Then removed profanity, sexual slang and slurs (2026-10-24), so a fresh install never offers
 them. The person can still type any of these, and words they speak or copy are learned as usual.
-Removed: any word containing fuck, shit, cunt, nigg, fagg, motherf, bitch, whore, slut, puss,
-porn, wank, dickhead, asshole, arsehole, douche, cocksuck, blowjob or dildo, plus these words:
-anal anus aroused arse ass asses badass bastard bastards bimbo boner boob boobies boobs booby
-bugger buggers cock cocks crap crappy craps cripple crippled cum dick dicks dicky dumbass dyke
-fag fags fatso goddamn goddamned gypsies gypsy ho hoe homo hooker hookers horny hos humping
-incest jackass jap japs kraut krauts midget molested negro negroes orgasm orgasms pecker
-pedophile perv pimp pimps piss pissed pisses pissing prick pricks queer rape raped rapes raping
-rapist rapists retard retarded schmuck shag shagging shite skank slag tit tits titties titty twat
-Kept as mild everyday words: hell, damn, damned. That left 19,854 lines.
+Removed: any word containing fuck, shit, cunt, nigg, fagg, motherf, bitch, whore, slut, puss
+(except pussycat), porn, wank, dickhead, asshole, arsehole, douche, cocksuck, blowjob or dildo,
+plus these words:
+arse ass asses badass bastard bastards bimbo bollocks boner boob boobies boobs bugger buggers
+cock cocks crap crappy cripple cum dick dicks dumbass dyke fag fags fatso goddamn goddamned
+gypsies gypsy ho homo hooker hookers horny hos humping jackass jap japs kraut krauts midget
+negro negroes orgasm orgasms pecker perv pimp pimps piss pissed pisses pissing prick pricks
+queer rapes rapists retard retarded schmuck shag shagging shite skank slag tits titties titty
+twat
+Kept as mild everyday words: hell, damn, damned.
+Safeguarding and medical words are deliberately kept, so the person can say what happened to
+them or what hurts: rape, raped, raping, rapist, molested, incest, pedophile, abuse, abused,
+assault, assaulted, anus, anal. These everyday words are kept too: hoe, booby, tit, dicky,
+aroused, crippled, craps, pussycat. That left 19,871 lines.
 
 Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0),
 https://creativecommons.org/licenses/by-sa/4.0/

@@ -55,12 +55,13 @@ test('real list: fone and nite show phone and night in the top 3', async () => {
   }
 });
 
-test('real list: fu, shi and rap suggest nothing rude', async () => {
+// Safeguarding words such as rape are kept on purpose, so 'rap' may offer them.
+test('real list: fu, shi and rap suggest no profanity or slurs', async () => {
   const wordList = await loadWordList('../data/words.txt');
   const s = { memory: createMemory(), wordList, matcher: createMatcher(wordList.words()) };
   for (const partial of ['fu', 'shi', 'rap']) {
     const top = suggest(s, partial, [], 3);
-    ok(top.length === 3 && !top.some(w => /fuck|shit|^rap(e|ed|es|ing|ist)/.test(w)), `${partial}: top 3 was ${JSON.stringify(top)}`);
+    ok(top.length === 3 && !top.some(w => /fuck|shit|cunt|nigg|fagg|bitch|whore|slut|bollocks/.test(w)), `${partial}: top 3 was ${JSON.stringify(top)}`);
   }
 });
 
