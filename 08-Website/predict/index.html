@@ -18,12 +18,25 @@
   <textarea id="text" aria-label="Your message" spellcheck="false" autocapitalize="sentences" autofocus></textarea>
 </div>
 <div id="suggestions" role="group" aria-label="Suggestions"></div>
-<div id="actions"></div>
+<div id="actions" role="group" aria-label="Actions">
+  <button type="button" id="speak" class="primary"><span aria-hidden="true">🔊</span>Speak</button>
+  <button type="button" id="copy"><span aria-hidden="true">📋</span>Copy</button>
+  <button type="button" id="undo"><span aria-hidden="true">↩</span>Undo</button>
+  <button type="button" id="clear"><span aria-hidden="true">✕</span>Clear</button>
+  <button type="button" id="open-recent"><span aria-hidden="true">🕘</span>Recent</button>
+</div>
 <dialog id="menu" aria-labelledby="menu-word">
   <form method="dialog">
     <p id="menu-word"></p>
     <button type="button" id="hear">Hear it</button>
     <button value="block">Don't suggest this</button>
+    <button value="">Close</button>
+  </form>
+</dialog>
+<dialog id="recent" aria-labelledby="recent-title">
+  <form method="dialog">
+    <p id="recent-title">Recent</p>
+    <div id="recent-list"></div>
     <button value="">Close</button>
   </form>
 </dialog>

@@ -1,24 +1,30 @@
 // Writing screen: wires the text box, suggestion buttons and long-press menu to the engine.
-import { splitContext, capitalizeIfStart, applySuggestion } from './text.js';
+import { splitContext, capitalizeIfStart, applySuggestion, shouldLearn } from './text.js';
 import { loadWordList } from './wordlist.js';
 import { createMemory } from './memory.js';
 import { createMatcher } from './spelling.js';
 import { gatherCandidates, rank } from './mixer.js';
 import { openStore } from './storage.js';
 import { withDefaults } from './settings.js';
+import { speak, listVoices } from './speech.js';
 
 const NO_MEMORY = "Can't remember things right now. Make a backup in settings.";
+const NO_SPEECH = "Your phone's text-to-speech is off. Turn it on in your phone's accessibility settings.";
+const NO_COPY = "Couldn't copy. Long-press the text and choose Copy.";
+const STARTER_PHRASES = ['I need help', 'Thank you', 'Yes', 'No', 'Please wait'];
 const $ = id => document.getElementById(id);
 const ta = $('text'), mirror = $('mirror'), sugg = $('suggestions'), menu = $('menu'), banner = $('banner');
 const showBanner = text => { banner.textContent = text; banner.hidden = false; };
 
-let store = await openStore(), memory, settings, wordList;
+let store = await openStore(), memory, settings, wordList, saved;
 try {
-  memory = createMemory(await store.get('memory'));
+  saved = await store.get('memory');
+  memory = createMemory(saved);
   settings = withDefaults(await store.get('settings'));
 } catch {
   // Never start empty on the real store: the first save would overwrite what was learned.
   store = await openStore(null);
+  saved = null;
   memory = createMemory();
   settings = withDefaults({});
 }
@@ -55,15 +61,66 @@ function saveMemory() {
 // The phone may close a hidden page without warning, so a waiting save goes out now.
 document.addEventListener('visibilitychange', () => { if (document.hidden && saveTimer) writeMemory(); });
 
-// shortcut: bare Web Speech call, Task 10 replaces it with speech.js speak()
-function say(text) {
-  if (!window.speechSynthesis) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.voice = speechSynthesis.getVoices().find(v => v.voiceURI === settings.voiceURI) ?? null;
-  u.rate = settings.rate;
-  speechSynthesis.speak(u);
+if (!saved) { // first start
+  STARTER_PHRASES.forEach(p => memory.pinPhrase(p));
+  saveMemory();
 }
+listVoices(); // Chrome only starts loading its voices when asked, and the first Speak shouldn't fail for that
+
+let lastLearned = null; // the sentence last committed, so Speak then Copy learns it once
+const undoStack = [];   // {text, cursor}, newest last, max 50
+const toastBox = $('toast');
+let toastTimer;
+
+function toast(message, ms = 2000, pin) {
+  clearTimeout(toastTimer);
+  const nodes = [message];
+  if (pin) {
+    const b = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Pin it' });
+    b.addEventListener('click', () => { memory.pinPhrase(pin); saveMemory(); renderPhrases(); toast(`Pinned "${pin}"`); });
+    nodes.push(b);
+  }
+  toastBox.replaceChildren(...nodes);
+  toastTimer = setTimeout(() => toastBox.replaceChildren(), ms);
+}
+
+// Every change the app makes goes through here, so each one can be undone.
+function remember() {
+  if (ta.value === undoStack.at(-1)?.text) return;
+  undoStack.push({ text: ta.value, cursor: ta.selectionStart });
+  if (undoStack.length > 50) undoStack.shift();
+}
+function setText(text, cursor, undoable = true) {
+  if (undoable) remember();
+  ta.value = text;
+  ta.setSelectionRange(cursor, cursor);
+  ta.focus();
+  lastPick = lastLearned = null; // a changed text is a new message, and there is no pick or fix left to judge
+  update(true);
+}
+function undo() {
+  let s;
+  while ((s = undoStack.pop()) && s.text === ta.value);
+  if (s) setText(s.text, s.cursor, false);
+}
+
+function learn(text) {
+  if (!shouldLearn(text, lastLearned)) return;
+  const { offerPin } = memory.commit(text);
+  lastLearned = text;
+  memory.knownWords().forEach(w => matcher.add(w));
+  saveMemory();
+  if (offerPin) toast(`You say "${offerPin}" a lot.`, 6000, offerPin);
+}
+
+function say(text) {
+  if (!speak(text, settings)) toast(NO_SPEECH, 6000);
+}
+
+function renderPhrases() {
+  $('phrases').replaceChildren(...memory.pinned().map(p => Object.assign(document.createElement('button'), { type: 'button', textContent: p })), $('add-phrase'));
+}
+renderPhrases();
 
 let fix = null;      // {typed, word, prev, start, end}: the misspelled word just before the cursor
 let lastPick = null; // {prev, word, cursor, text}: penalised if the very next input deletes it
@@ -130,12 +187,10 @@ function choose(key) {
     if (!key.startsWith(partial)) { memory.recordSlip(partial, key); saveMemory(); }
     prev = context.at(-1);
   }
-  lastPick = { prev, word: key, cursor: r.cursor, text: r.text };
   matcher.add(key);
-  ta.value = r.text;
-  ta.setSelectionRange(r.cursor, r.cursor);
-  if (settings.speakEachWord) say(memory.display(key));
-  update();
+  setText(r.text, r.cursor);
+  lastPick = { prev, word: key, cursor: r.cursor, text: r.text };
+  if (settings.speakEachWord) speak(memory.display(key), settings);
 }
 
 function openMenu(key) {
@@ -145,9 +200,11 @@ function openMenu(key) {
   menu.showModal();
 }
 
+// A space or punctuation starts a new word, so undo steps back one word at a time.
+ta.addEventListener('beforeinput', e => { if (/\s$/.test(e.data ?? '')) remember(); });
 ta.addEventListener('input', e => {
   const p = lastPick;
-  lastPick = null;
+  lastPick = lastLearned = null;
   if (p && e.inputType === 'deleteContentBackward') {
     const at = ta.selectionStart;
     // Removing just the space after the word (to type "." or ",") isn't a rejection; reaching the word is.
@@ -200,7 +257,7 @@ sugg.addEventListener('contextmenu', e => { // the menu key, a right-click, or t
   if (!menu.open) openMenu(b.dataset.word);
 });
 
-$('hear').addEventListener('click', () => say(memory.display(menu.dataset.word)));
+$('hear').addEventListener('click', () => speak(memory.display(menu.dataset.word), settings));
 menu.addEventListener('close', () => {
   down.clear(); // the finger that opened the menu may lift over it, out of our sight
   press = null;
@@ -209,3 +266,53 @@ menu.addEventListener('close', () => {
 });
 
 update();
+
+// The buttons keep focus on the text box, and so the phone's keyboard.
+for (const id of ['actions', 'phrases']) $(id).addEventListener('pointerdown', e => e.preventDefault());
+
+$('speak').addEventListener('click', () => {
+  const text = ta.value;
+  if (!text.trim()) return;
+  learn(text);
+  say(text);
+  if (settings.clearAfterSpeak) setText('', 0);
+});
+$('copy').addEventListener('click', async () => {
+  const text = ta.value;
+  if (!text.trim()) return;
+  try { await navigator.clipboard.writeText(text); } catch { return toast(NO_COPY, 6000); }
+  learn(text);
+  toast('Copied');
+});
+$('undo').addEventListener('click', undo);
+$('clear').addEventListener('click', () => setText('', 0));
+
+const recent = $('recent');
+$('open-recent').addEventListener('click', () => {
+  const items = memory.recent().map(text => Object.assign(document.createElement('button'), { type: 'button', textContent: text }));
+  $('recent-list').replaceChildren(...(items.length ? items : ['Nothing yet. Sentences you speak or copy show up here.']));
+  recent.showModal();
+});
+$('recent-list').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  recent.close();
+  setText(b.textContent, b.textContent.length);
+});
+
+$('phrases').addEventListener('click', e => {
+  if (e.target.closest('#add-phrase')) {
+    const text = ta.value.trim();
+    if (!text) return toast('Write a phrase first, then press +.');
+    memory.pinPhrase(text);
+    saveMemory();
+    renderPhrases();
+    return toast(`Pinned "${text}"`);
+  }
+  const phrase = e.target.closest('button')?.textContent;
+  if (!phrase) return;
+  if (settings.phraseSpeaks) return say(phrase);
+  const { value, selectionStart: start, selectionEnd: end } = ta;
+  const lead = start && !/\s$/.test(value.slice(0, start)) ? ' ' : '';
+  setText(value.slice(0, start) + lead + phrase + value.slice(end), start + lead.length + phrase.length);
+});
