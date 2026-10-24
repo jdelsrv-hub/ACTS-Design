@@ -55,7 +55,6 @@ test('real list: fone and nite show phone and night in the top 3', async () => {
   }
 });
 
-// Safeguarding words such as rape are kept on purpose, so 'rap' may offer them.
 test('real list: fu, shi and rap suggest no profanity or slurs', async () => {
   const wordList = await loadWordList('../data/words.txt');
   const s = { memory: createMemory(), wordList, matcher: createMatcher(wordList.words()) };
@@ -63,6 +62,16 @@ test('real list: fu, shi and rap suggest no profanity or slurs', async () => {
     const top = suggest(s, partial, [], 3);
     ok(top.length === 3 && !top.some(w => /fuck|shit|cunt|nigg|fagg|bitch|whore|slut|bollocks/.test(w)), `${partial}: top 3 was ${JSON.stringify(top)}`);
   }
+});
+
+// Safeguarding words are kept at the list's lowest count, so a mistap on 'rap' never offers them, but typing the word out still does.
+test('real list: safeguarding words show only for their own longer prefix', async () => {
+  const wordList = await loadWordList('../data/words.txt');
+  const s = { memory: createMemory(), wordList, matcher: createMatcher(wordList.words()) };
+  const rap = suggest(s, 'rap', [], 3);
+  ok(!rap.some(w => ['rape', 'raped', 'raping', 'rapist', 'molested', 'incest', 'pedophile'].includes(w)), `rap: top 3 was ${JSON.stringify(rap)}`);
+  const rape = suggest(s, 'rape', [], 3);
+  ok(rape.includes('rape'), `rape: top 3 was ${JSON.stringify(rape)}`);
 });
 
 test('starter words show before more common words', async () => {

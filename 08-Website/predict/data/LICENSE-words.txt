@@ -21,6 +21,9 @@ Safeguarding and medical words are deliberately kept, so the person can say what
 them or what hurts: rape, raped, raping, rapist, molested, incest, pedophile, abuse, abused,
 assault, assaulted, anus, anal. These everyday words are kept too: hoe, booby, tit, dicky,
 aroused, crippled, craps, pussycat. That left 19,871 lines.
+The safeguarding words rape, raped, rapist, raping, molested, pedophile and incest are kept at
+the list's lowest count (782) and moved to the end of the file, so they appear on their own 4+
+letter prefixes, never on 2-3 letter ones such as "rap".
 
 Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0),
 https://creativecommons.org/licenses/by-sa/4.0/

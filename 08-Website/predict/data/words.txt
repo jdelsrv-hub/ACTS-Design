@@ -2566,7 +2566,6 @@ joined 16342
 education 16326
 bravo 16320
 library 16307
-rape 16303
 wings 16298
 growling 16293
 thrown 16290
@@ -3211,7 +3210,6 @@ environment 12101
 western 12101
 average 12100
 ease 12094
-raped 12088
 interrupt 12088
 judy 12085
 satisfied 12083
@@ -8709,7 +8707,6 @@ amazon 2984
 flooded 2983
 torment 2983
 mermaid 2983
-rapist 2983
 sanders 2982
 triggered 2982
 expects 2982
@@ -12182,7 +12179,6 @@ fragment 1753
 baldwin 1752
 obscene 1752
 zebra 1752
-raping 1752
 analyst 1751
 eta 1751
 elbows 1751
@@ -15503,7 +15499,6 @@ estates 1192
 fatima 1192
 pods 1192
 assisting 1192
-molested 1191
 offerings 1191
 believable 1191
 airports 1191
@@ -15927,7 +15922,6 @@ outraged 1140
 lurch 1140
 ultimatum 1139
 delegate 1139
-pedophile 1139
 directive 1139
 pleaded 1138
 reducing 1138
@@ -19136,7 +19130,6 @@ fam 832
 diablo 832
 leone 832
 daydreaming 832
-incest 832
 abba 832
 mathilde 832
 unanswered 832
@@ -19869,3 +19862,10 @@ detox 782
 thyself 782
 anticipating 782
 scoffing 782
+rape 782
+raped 782
+rapist 782
+raping 782
+molested 782
+pedophile 782
+incest 782
