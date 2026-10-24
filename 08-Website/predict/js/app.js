@@ -283,7 +283,7 @@ sugg.addEventListener('pointerdown', e => {
   if (!b) return;
   e.preventDefault(); // keeps focus, and so the phone's keyboard, on the text box
   disarm();
-  const p = press = { b, t: e.timeStamp, long: false };
+  const p = press = { b, t: e.timeStamp, long: false, id: e.pointerId, type: e.pointerType };
   // With tap safety, the button shows when letting go will choose, and the menu waits longer so there's time to let go.
   if (settings.tapSafety) armTimer = setTimeout(() => b.classList.add('armed'), 300);
   holdTimer = setTimeout(() => { p.long = true; b.classList.remove('armed'); openMenu(b.dataset.word); }, settings.tapSafety ? 1000 : 500);
@@ -301,6 +301,8 @@ sugg.addEventListener('contextmenu', e => { // the menu key, a right-click, or t
   const b = e.target.closest('.sugg');
   if (!b) return;
   e.preventDefault();
+  // The phone's long-press comes at about 450 ms, so a finger or pen still down is left to the hold timer (1000 ms with tap safety).
+  if (press && press.type !== 'mouse' && down.has(press.id)) return;
   if (!menu.open) openMenu(b.dataset.word);
 });
 
