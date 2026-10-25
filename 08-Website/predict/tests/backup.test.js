@@ -35,3 +35,5 @@ test('validateSnapshot rejects malformed nested entries', () => {
   ];
   for (const [k, v] of bad) { const s = good(); s[k] = v; ok(!validateSnapshot(s), k + ' ' + JSON.stringify(v)); }
 });
+test('old backups without favourites restore', () => { const s = createMemory().toJSON(); delete s.favourites; ok(validateSnapshot(s)); eq(createMemory(s).favourites(), []); });
+test('favourites must be strings when present', () => { const s = createMemory().toJSON(); s.favourites = [3]; ok(!validateSnapshot(s)); s.favourites = 'tea'; ok(!validateSnapshot(s)); });

@@ -6,13 +6,14 @@ export const HALF_LIFE_MS = 30 * 864e5;
 
 export function createMemory(snapshot) {
   // shortcut: no size caps, add pruning if memory ever slows start-up
-  const s = { version: 1, blocked: [], recent: [], pins: [], committedWords: 0, ...snapshot };
+  const s = { version: 1, blocked: [], recent: [], pins: [], favourites: [], committedWords: 0, ...snapshot };
   // No prototype, so typed words like "constructor" or "__proto__" are plain keys.
   const table = from => Object.assign(Object.create(null), from);
   for (const t of ['words', 'ngrams', 'phrases', 'penalties']) s[t] = table(snapshot?.[t]);
   s.slips = table();
   for (const typed in snapshot?.slips) s.slips[typed] = table(snapshot.slips[typed]);
   s.blocked = [...s.blocked];
+  s.favourites = [...s.favourites];
   s.pins = s.pins.filter(p => p in s.phrases); // drop ghost pins so pinned() and phrases() agree
 
   let paused = false;
@@ -39,6 +40,14 @@ export function createMemory(snapshot) {
       totalCache = { now, sum: Object.values(s.words).reduce((sum, e) => sum + decayed(e, now), 0) };
     }
     return totalCache.sum;
+  };
+
+  // A favourite is usable when it is non-blank, short, and not already there (ignoring case and the slot being renamed).
+  const favouriteOk = (word, except = -1) => word !== '' && word.length <= 60
+    && !s.favourites.some((f, i) => i !== except && f.toLowerCase() === word.toLowerCase());
+  const swap = (list, i, delta) => {
+    const j = i + delta;
+    if (i in list && j in list) [list[i], list[j]] = [list[j], list[i]];
   };
 
   const reindex = () => {
@@ -163,6 +172,33 @@ export function createMemory(snapshot) {
       s.pins = s.pins.filter(p => p !== text);
     },
     pinned: () => [...s.pins],
+    movePin: (index, delta) => swap(s.pins, index, delta),
+    renamePin(index, text) {
+      const phrase = text.trim();
+      if (!(index in s.pins) || !phrase || s.pins.includes(phrase)) return false;
+      s.phrases[phrase] ??= { count: 0, lastUsed: Date.now(), offered: false };
+      s.pins[index] = phrase;
+      return true;
+    },
+
+    // Favourites are a list the person keeps, not learning, so pause and Start fresh leave them alone.
+    favourites: () => [...s.favourites],
+    addFavourite(word) {
+      const w = word.trim();
+      if (!favouriteOk(w)) return false;
+      s.favourites.push(w);
+      return true;
+    },
+    renameFavourite(index, word) {
+      const w = word.trim();
+      if (!(index in s.favourites) || !favouriteOk(w, index)) return false;
+      s.favourites[index] = w;
+      return true;
+    },
+    removeFavourite(index) {
+      s.favourites = s.favourites.filter((_, i) => i !== index);
+    },
+    moveFavourite: (index, delta) => swap(s.favourites, index, delta),
 
     phrases: () => Object.entries(s.phrases).map(([text, e]) => ({ text, count: e.count, pinned: s.pins.includes(text) })).sort((x, y) => y.count - x.count),
     words: () => Object.entries(s.words).map(([key, e]) => ({ key, display: e.display ?? key, count: e.count })).sort((x, y) => y.count - x.count),

@@ -52,3 +52,14 @@ test('pins naming no phrase are dropped on load', () => {
   const snap = JSON.parse(JSON.stringify(m.toJSON())); snap.pins.push('ghost');
   const copy = createMemory(snap); eq(copy.pinned(), ['real one']); eq(copy.phrases().filter(p => p.pinned).length, 1);
 });
+test('favourites keep order, refuse duplicates and blanks', () => { const m = createMemory(); ok(m.addFavourite(' coffee ')); ok(m.addFavourite('tea')); ok(!m.addFavourite('Coffee')); ok(!m.addFavourite('  ')); eq(m.favourites(), ['coffee', 'tea']); });
+test('favourites refuse words over 60 characters', () => { const m = createMemory(); ok(!m.addFavourite('x'.repeat(61))); ok(m.addFavourite('x'.repeat(60))); });
+test('move, rename and remove favourites', () => { const m = createMemory(); ['a', 'b', 'c'].forEach(w => m.addFavourite(w)); m.moveFavourite(2, -1); eq(m.favourites(), ['a', 'c', 'b']); m.moveFavourite(0, -1); eq(m.favourites(), ['a', 'c', 'b']); ok(m.renameFavourite(1, 'cat')); m.removeFavourite(0); eq(m.favourites(), ['cat', 'b']); });
+test('renameFavourite refuses blanks and duplicates', () => { const m = createMemory(); ['a', 'b'].forEach(w => m.addFavourite(w)); ok(!m.renameFavourite(0, ' ')); ok(!m.renameFavourite(0, 'B')); eq(m.favourites(), ['a', 'b']); });
+test('favourites survive Start fresh and work while paused', () => { const m = createMemory(); m.paused = true; ok(m.addFavourite('music')); m.clearLearned(); eq(m.favourites(), ['music']); });
+test('favourites survive a snapshot round trip and are returned as a copy', () => { const m = createMemory(); m.addFavourite('tea'); m.favourites().push('x'); eq(createMemory(JSON.parse(JSON.stringify(m.toJSON()))).favourites(), ['tea']); });
+test('movePin and renamePin', () => { const m = createMemory(); ['Yes', 'No', 'Wait'].forEach(p => m.pinPhrase(p)); m.movePin(2, -1); eq(m.pinned(), ['Yes', 'Wait', 'No']); ok(m.renamePin(0, 'Yes please')); eq(m.pinned(), ['Yes please', 'Wait', 'No']); ok(!m.renamePin(1, 'No')); });
+test('movePin does nothing at the ends; renamePin keeps the old phrase and refuses blanks', () => {
+  const m = createMemory(); ['Yes', 'No'].forEach(p => m.pinPhrase(p)); m.movePin(0, -1); m.movePin(1, 1); eq(m.pinned(), ['Yes', 'No']);
+  ok(!m.renamePin(0, '  ')); ok(m.renamePin(0, 'Sure')); eq(m.phrases().map(p => p.text).sort(), ['No', 'Sure', 'Yes']); eq(m.phrases().find(p => p.text === 'Sure').count, 0);
+});

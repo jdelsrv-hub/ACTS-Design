@@ -47,5 +47,5 @@ test('snapshot round trip', () => {
   const m = createMemory(); m.commit('see you soon', T); m.commit('see you soon', T);
   const copy = createMemory(JSON.parse(JSON.stringify(m.toJSON())));
   eq(copy.followers(['see', 'you'], 5), ['soon']); eq(copy.committedWords, 6); eq(copy.recent(), ['see you soon']);
-  eq(Object.keys(copy.toJSON()).sort(), ['blocked', 'committedWords', 'ngrams', 'penalties', 'phrases', 'pins', 'recent', 'slips', 'version', 'words']);
+  eq(Object.keys(copy.toJSON()).sort(), ['blocked', 'committedWords', 'favourites', 'ngrams', 'penalties', 'phrases', 'pins', 'recent', 'slips', 'version', 'words']);
 });

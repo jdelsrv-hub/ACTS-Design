@@ -12,6 +12,7 @@ export function validateSnapshot(s) {
     && isObject(s.penalties) && Object.values(s.penalties).every(isCount)
     && isObject(s.slips) && Object.values(s.slips).every(row => isObject(row) && Object.values(row).every(isCount))
     && ['blocked', 'recent', 'pins'].every(k => isStrings(s[k]))
+    && (s.favourites === undefined || isStrings(s.favourites)) // missing in backups made before favourites existed
     && isCount(s.committedWords);
 }
 

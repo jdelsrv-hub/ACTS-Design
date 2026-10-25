@@ -31,3 +31,4 @@ test('withDefaults checks rate and voiceURI', () => {
 });
 test('withDefaults survives non-objects and inherited keys', () => { eq(withDefaults(Object.create({textSize: 'huge'})), DEFAULTS); eq(withDefaults(null), DEFAULTS); eq(withDefaults('x'), DEFAULTS); eq(withDefaults(JSON.parse('{"__proto__":{"textSize":"huge"}}')), DEFAULTS); });
 test('withDefaults keeps a boolean paused', () => { eq(withDefaults({paused: true}).paused, true); eq(withDefaults({paused: 'yes'}).paused, false); });
+test('withDefaults keeps showPredictions', () => eq(withDefaults({showPredictions: false}).showPredictions, false));
