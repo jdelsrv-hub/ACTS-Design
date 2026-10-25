@@ -17,28 +17,38 @@ if ('serviceWorker' in navigator && (location.hostname !== '127.0.0.1' || locati
 </script>
 </head>
 <body>
-<div id="phrases" role="group" aria-label="Quick phrases">
-  <button type="button" id="add-phrase" aria-label="Save as quick phrase" title="Save as quick phrase">+</button>
-</div>
+<header>
+  <label for="text">Your message</label>
+  <button type="button" id="more">More</button>
+  <!-- U+FE0E keeps the cog as text, so it takes the theme's colour. -->
+  <button type="button" id="open-settings" aria-label="Settings">⚙︎</button>
+</header>
 <div id="editor">
   <div id="mirror" aria-hidden="true"></div>
-  <textarea id="text" aria-label="Your message" spellcheck="false" autocapitalize="sentences" autofocus></textarea>
+  <textarea id="text" spellcheck="false" autocapitalize="sentences" autofocus></textarea>
 </div>
 <div id="suggestions" role="group" aria-label="Suggestions"></div>
 <div id="actions" role="group" aria-label="Actions">
-  <button type="button" id="speak" class="primary"><span aria-hidden="true">🔊</span>Speak</button>
-  <button type="button" id="copy"><span aria-hidden="true">📋</span>Copy</button>
+  <button type="button" id="speak"><span aria-hidden="true">🔊</span><span>Speak</span></button>
   <button type="button" id="undo"><span aria-hidden="true">↩</span>Undo</button>
   <button type="button" id="clear"><span aria-hidden="true">✕</span>Clear</button>
-  <button type="button" id="open-recent"><span aria-hidden="true">🕘</span>Recent</button>
-  <button type="button" id="open-learned"><span aria-hidden="true">🧠</span>Learned</button>
-  <button type="button" id="open-settings"><span aria-hidden="true">⚙</span>Settings</button>
 </div>
+<div id="tabs"></div>
+<div id="panels"></div>
 <dialog id="menu" aria-labelledby="menu-word">
   <form method="dialog">
     <p id="menu-word"></p>
     <button type="button" id="hear">Hear it</button>
     <button value="block">Don't suggest this</button>
+    <button value="">Close</button>
+  </form>
+</dialog>
+<dialog id="more-menu" aria-labelledby="more-title">
+  <form method="dialog">
+    <p id="more-title" class="title">More</p>
+    <button type="button" id="copy">Copy</button>
+    <button type="button" id="open-recent">Recent</button>
+    <button type="button" id="open-learned">What it has learned</button>
     <button value="">Close</button>
   </form>
 </dialog>

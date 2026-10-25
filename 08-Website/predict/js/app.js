@@ -7,7 +7,7 @@ import { gatherCandidates, rank } from './mixer.js';
 import { openStore } from './storage.js';
 import { withDefaults } from './settings.js';
 import { makeBackup, readBackup } from './backup.js';
-import { speak, listVoices } from './speech.js';
+import { speak, listVoices, onSpeaking, stop } from './speech.js';
 
 const NO_MEMORY = "Can't remember things right now. Make a backup in What it has learned.";
 const NO_SPEECH = "Your phone's text-to-speech is off. Turn it on in your phone's accessibility settings.";
@@ -136,6 +136,7 @@ function undo() {
 // The note (e.g. "Copied") and any pin offer share one toast: a pin is offered once only, so nothing may replace it.
 function learn(text, note, ms = 2000) {
   lastBlock = null;
+  refreshActions();
   let offer = null;
   if (shouldLearn(text, lastLearned)) {
     offer = memory.commit(text).offerPin;
@@ -159,10 +160,10 @@ function say(text) {
   if (!speak(text, settings, noSpeech, speechStarted)) noSpeech();
 }
 
+// Does nothing until the Quick phrases panel exists.
 function renderPhrases() {
-  $('phrases').replaceChildren(...memory.pinned().map(p => Object.assign(document.createElement('button'), { type: 'button', textContent: p })), $('add-phrase'));
+  $('phrases')?.replaceChildren(...memory.pinned().map(p => Object.assign(document.createElement('button'), { type: 'button', textContent: p })));
 }
-renderPhrases();
 
 let fix = null;      // {typed, word, prev, start, end}: the misspelled word just before the cursor
 let lastPick = null; // {prev, word, cursor, text}: penalised if the very next input deletes it
@@ -181,7 +182,23 @@ function findFix(before) {
   return { typed, word, prev: context.at(-1), start: trimmed.length - typed.length, end: trimmed.length };
 }
 
+// aria-disabled, not disabled, so the buttons stay focusable and screen readers still find them.
+const speakBtn = $('speak'), undoBtn = $('undo');
+let speaking = false;
+function refreshActions() {
+  speakBtn.ariaDisabled = String(!speaking && !ta.value.trim());
+  undoBtn.ariaDisabled = String(!lastBlock && !undoStack.some(s => s.text !== ta.value));
+}
+// Every speech path (Speak, Hear it, each word, quick phrases, Test voice) turns Speak into Stop.
+onSpeaking(on => {
+  speaking = on;
+  speakBtn.firstElementChild.textContent = on ? '⏹︎' : '🔊';
+  speakBtn.lastElementChild.textContent = on ? 'Stop' : 'Speak';
+  refreshActions();
+});
+
 function update(force) {
+  refreshActions();
   const { value } = ta, cur = ta.selectionStart;
   if (!force && shown === `${cur}:${value}`) return;
   shown = `${cur}:${value}`;
@@ -323,9 +340,10 @@ menu.addEventListener('close', () => {
 update();
 
 // The buttons keep focus on the text box, and so the phone's keyboard.
-for (const id of ['actions', 'phrases', 'toast']) $(id).addEventListener('pointerdown', e => e.preventDefault());
+for (const id of ['actions', 'toast']) $(id).addEventListener('pointerdown', e => e.preventDefault());
 
-$('speak').addEventListener('click', () => {
+speakBtn.addEventListener('click', () => {
+  if (speaking) return stop();
   const text = ta.value;
   if (!text.trim()) return;
   const spoke = speak(text, settings, noSpeech, speechStarted);
@@ -338,8 +356,15 @@ $('copy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(text); } catch { return toast(NO_COPY, 6000); }
   learn(text, 'Copied');
 });
-$('undo').addEventListener('click', undo);
+undoBtn.addEventListener('click', undo);
 $('clear').addEventListener('click', () => setText('', 0));
+
+const moreBox = $('more-menu');
+$('more').addEventListener('click', () => moreBox.showModal());
+// Copy, Recent and What it has learned close the menu first, so Recent and the learned page open on their own.
+moreBox.addEventListener('click', e => { if (e.target.closest('button')) moreBox.close(); }, true);
+// Safari doesn't focus a tapped button, so focus goes back to More by hand, unless Recent or the learned page just opened.
+moreBox.addEventListener('close', () => { if (!document.querySelector('dialog[open]')) $('more').focus(); });
 
 const recent = $('recent');
 $('open-recent').addEventListener('click', () => {
@@ -352,23 +377,6 @@ $('recent-list').addEventListener('click', e => {
   if (!b) return;
   recent.close();
   setText(b.textContent, b.textContent.length);
-});
-
-$('phrases').addEventListener('click', e => {
-  if (e.target.closest('#add-phrase')) {
-    const text = ta.value.trim();
-    if (!text) return toast('Write a phrase first, then press +.');
-    memory.pinPhrase(text);
-    saveMemory();
-    renderPhrases();
-    return toast(`Pinned "${text}"`);
-  }
-  const phrase = e.target.closest('button')?.textContent;
-  if (!phrase) return;
-  if (settings.phraseSpeaks) return say(phrase);
-  const { value, selectionStart: start, selectionEnd: end } = ta;
-  const lead = start && !/\s$/.test(value.slice(0, start)) ? ' ' : '';
-  setText(value.slice(0, start) + lead + phrase + value.slice(end), start + lead.length + phrase.length);
 });
 
 // Settings
