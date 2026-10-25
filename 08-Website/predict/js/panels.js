@@ -10,7 +10,7 @@ const button = (text, aria) => {
 };
 
 export function createPagedPanel(root, {label, onPick, live}) {
-  let items = [], page = 0, size = 2, start = null, swiped = false;
+  let items = [], page = 0, size = 2, maxDots = 7, start = null, swipedAt = -Infinity;
   const grid = document.createElement('div'), nav = document.createElement('div'), dots = document.createElement('div');
   // U+FE0E keeps the arrows as text, not emoji.
   const prev = button('◀︎', 'Previous'), next = button('▶︎', 'Next');
@@ -32,7 +32,7 @@ export function createPagedPanel(root, {label, onPick, live}) {
     nav.hidden = count === 1;
     prev.disabled = page === 0;
     next.disabled = page === count - 1;
-    dots.replaceChildren(...dotWindow(page, count).map(i => {
+    dots.replaceChildren(...dotWindow(page, count, maxDots).map(i => {
       const b = button('', `Go to page ${i + 1} of ${count}`), dot = document.createElement('span');
       const look = dotLook(Math.abs(i - page));
       if (i === page) b.setAttribute('aria-current', 'page');
@@ -42,8 +42,10 @@ export function createPagedPanel(root, {label, onPick, live}) {
       b.onclick = () => go(i);
       return b;
     }));
-    // Keyboard and switch users keep their place when the dot they used is redrawn or the end button disables.
-    if (inNav && !nav.hidden && (focused.disabled || !focused.isConnected)) dots.querySelector('[aria-current]').focus();
+    // Keyboard and switch users keep their place when the control they used is redrawn, disabled or hidden.
+    if (inNav && (nav.hidden || focused.disabled || !focused.isConnected)) {
+      (nav.hidden ? grid.firstElementChild || root : dots.querySelector('[aria-current]')).focus();
+    }
   }
 
   function go(to) {
@@ -52,40 +54,47 @@ export function createPagedPanel(root, {label, onPick, live}) {
     if (to === page) return;
     page = to;
     render();
+    live.textContent = ''; // so the same words twice are announced twice
     live.textContent = `${label}, page ${page + 1} of ${count}`;
   }
 
   // Page size is however many rows at the current text size fit the grid, measured with the nav showing.
-  // Twice, because the first render can add dots that wrap the nav onto a second row.
+  // Only as many 48 px dots as fit beside Previous and Next, so the nav never wraps onto a second row.
   function refresh() {
-    for (let pass = 0; pass < 2; pass++) {
-      nav.hidden = false;
-      const probe = grid.appendChild(button('Ag'));
-      const gap = parseFloat(getComputedStyle(grid).rowGap) || 0;
-      // shortcut: assumes one-line rows; a wrapped long phrase can push the last row out of view, so the grid scrolls to keep it reachable.
-      size = perPage(grid.clientHeight + gap, probe.offsetHeight + gap);
-      probe.remove();
-      page = clampPage(page, items.length, size);
-      render();
-    }
+    nav.hidden = false;
+    maxDots = Math.max(3, Math.min(7, Math.floor(dots.clientWidth / 48)));
+    const probe = grid.appendChild(button('Ag'));
+    const gap = parseFloat(getComputedStyle(grid).rowGap) || 0;
+    // shortcut: assumes one-line rows; a wrapped long phrase can push the last row out of view, so the grid scrolls to keep it reachable.
+    size = perPage(grid.clientHeight + gap, probe.offsetHeight + gap);
+    probe.remove();
+    page = clampPage(page, items.length, size);
+    render();
   }
 
   prev.onclick = () => go(page - 1);
   next.onclick = () => go(page + 1);
 
-  root.addEventListener('pointerdown', e => { start = e; swiped = false; });
+  // Only the first finger swipes; a second finger, or a gesture the browser takes over (scroll, zoom), does nothing.
+  root.addEventListener('pointerdown', e => {
+    if (!e.isPrimary) return;
+    start = e;
+    swipedAt = -Infinity;
+  });
+  root.addEventListener('pointercancel', () => { start = null; });
   root.addEventListener('pointerup', e => {
-    if (!start) return;
+    if (!start || e.pointerId !== start.pointerId) return;
     const dx = e.clientX - start.clientX, dy = e.clientY - start.clientY;
     start = null;
     if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return;
-    swiped = true;
+    swipedAt = e.timeStamp;
     go(page + (dx < 0 ? 1 : -1));
   });
-  // The click that ends a swipe must never pick the button the swipe started on.
+  // The click that ends a swipe must never pick the button the swipe started on. A swipe often ends with
+  // no click at all, so only a click within 300 ms counts; a later keyboard or switch click goes through.
   root.addEventListener('click', e => {
-    if (!swiped) return;
-    swiped = false;
+    if (e.timeStamp - swipedAt > 300) return;
+    swipedAt = -Infinity;
     e.stopPropagation();
     e.preventDefault();
   }, true);

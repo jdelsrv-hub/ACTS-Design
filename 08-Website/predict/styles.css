@@ -103,6 +103,6 @@ legend { padding: 0; font-weight: 700; }
 .paged-grid button { min-height: 56px; white-space: normal; overflow-wrap: anywhere; }
 .paged-nav { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .paged-nav > button:disabled { opacity: 0.4; }
-.dots { display: flex; flex-wrap: wrap; justify-content: center; }
+.dots { display: flex; justify-content: center; }
 .dots button { display: grid; place-items: center; padding: 0; border: 0; background: none; }
 .dots span { border-radius: 50%; background: var(--dot, #1b6e3b); }
