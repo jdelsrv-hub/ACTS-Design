@@ -94,3 +94,15 @@ legend { padding: 0; font-weight: 700; }
 .list .count { font-size: 0.75em; }
 /* Stays in view at the bottom of a long dialog. */
 .close { position: sticky; bottom: 0; }
+
+/* Paged panels (Suggested, Favourite words, Quick phrases). The grid takes the height left over by the nav. */
+.paged { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+/* pan-y lets the list scroll while sideways swipes reach the pager; pinch-zoom stays for the person's eyesight. */
+.paged-grid { flex: 1 1 0; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: max-content; gap: 8px; align-content: start; touch-action: pan-y pinch-zoom; }
+/* max-content rows: auto rows in a full grid shrink and cut a long wrapped label off. */
+.paged-grid button { min-height: 56px; white-space: normal; overflow-wrap: anywhere; }
+.paged-nav { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.paged-nav > button:disabled { opacity: 0.4; }
+.dots { display: flex; flex-wrap: wrap; justify-content: center; }
+.dots button { display: grid; place-items: center; padding: 0; border: 0; background: none; }
+.dots span { border-radius: 50%; background: var(--dot, #1b6e3b); }
