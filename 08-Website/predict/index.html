@@ -27,14 +27,30 @@ if ('serviceWorker' in navigator && (location.hostname !== '127.0.0.1' || locati
   <div id="mirror" aria-hidden="true"></div>
   <textarea id="text" spellcheck="false" autocapitalize="sentences" autofocus></textarea>
 </div>
-<div id="suggestions" role="group" aria-label="Suggestions"></div>
 <div id="actions" role="group" aria-label="Actions">
   <button type="button" id="speak"><span aria-hidden="true">🔊</span><span>Speak</span></button>
   <button type="button" id="undo"><span aria-hidden="true">↩</span>Undo</button>
   <button type="button" id="clear"><span aria-hidden="true">✕</span>Clear</button>
 </div>
-<div id="tabs"></div>
-<div id="panels"></div>
+<div id="tabs" role="tablist" aria-label="Input">
+  <button type="button" role="tab" id="tab-keyboard" aria-controls="panel-keyboard" aria-selected="true">Keyboard</button>
+  <button type="button" role="tab" id="tab-suggested" aria-controls="panel-suggested" aria-selected="false" tabindex="-1">Suggested words</button>
+  <button type="button" role="tab" id="tab-favourites" aria-controls="panel-favourites" aria-selected="false" tabindex="-1">Favourite words</button>
+  <button type="button" role="tab" id="tab-phrases" aria-controls="panel-phrases" aria-selected="false" tabindex="-1">Quick phrases</button>
+</div>
+<div id="panels">
+  <div role="tabpanel" id="panel-keyboard" aria-labelledby="tab-keyboard">
+    <div id="suggestions" role="group" aria-label="Suggestions"></div>
+  </div>
+  <div role="tabpanel" id="panel-suggested" aria-labelledby="tab-suggested" hidden>
+    <p id="predictions-off" class="status" hidden>Word predictions are off <button type="button" id="predictions-on">Turn on</button></p>
+    <p id="no-suggestions" class="status" hidden>No suggestions yet</p>
+    <div id="suggested" tabindex="-1"></div>
+  </div>
+  <div role="tabpanel" id="panel-favourites" aria-labelledby="tab-favourites" hidden></div>
+  <div role="tabpanel" id="panel-phrases" aria-labelledby="tab-phrases" hidden></div>
+</div>
+<p id="pager-live" class="visually-hidden" aria-live="polite"></p>
 <dialog id="menu" aria-labelledby="menu-word">
   <form method="dialog">
     <p id="menu-word"></p>

@@ -8,6 +8,7 @@ import { openStore } from './storage.js';
 import { withDefaults } from './settings.js';
 import { makeBackup, readBackup } from './backup.js';
 import { speak, listVoices, onSpeaking, stop } from './speech.js';
+import { createPagedPanel } from './panels.js';
 
 const NO_MEMORY = "Can't remember things right now. Make a backup in What it has learned.";
 const NO_SPEECH = "Your phone's text-to-speech is off. Turn it on in your phone's accessibility settings.";
@@ -25,6 +26,10 @@ if (vv) {
   vv.addEventListener('resize', fit);
   fit();
 }
+const pagers = []; // every paged panel, re-measured whenever its space may have changed
+const refreshPanels = () => pagers.forEach(p => p.refresh());
+addEventListener('resize', refreshPanels);
+vv?.addEventListener('resize', refreshPanels);
 
 let store = await openStore(), memory, settings, wordList, saved;
 try {
@@ -54,6 +59,7 @@ function applySettings() {
   if (settings.font === 'hyperlegible' && !$('font')) {
     document.head.append(Object.assign(document.createElement('link'), { id: 'font', rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap' }));
   }
+  refreshPanels(); // the text size sets how many buttons fit
 }
 applySettings();
 if (!store.persistent) showBanner(NO_MEMORY);
@@ -81,6 +87,8 @@ navigator.storage?.persist?.().catch(() => {}); // asks the browser not to clear
 
 let lastLearned = null; // the sentence last committed, so Speak then Copy learns it once
 const undoStack = [];   // {text, cursor}, newest last, max 50
+let caret = { start: 0, end: 0 }; // where a word from another tab goes, kept while the text box is blurred
+const typing = () => !$('panel-keyboard').hidden;
 let lastBlock = null;  // the word just blocked, while blocking it is still the last thing done, so Undo can allow it again
 const toastBox = $('toast');
 let toastTimer, toastPin = null;
@@ -116,7 +124,8 @@ function setText(text, cursor, undoable = true) {
   if (undoable) remember();
   ta.value = text;
   ta.setSelectionRange(cursor, cursor);
-  ta.focus();
+  caret = { start: cursor, end: cursor };
+  if (typing()) ta.focus(); // on another tab the phone's keyboard stays closed
   lastPick = lastLearned = lastBlock = null; // a changed text is a new message, and there is no pick or fix left to judge
   update(true);
 }
@@ -171,6 +180,15 @@ let shown = null;    // text and cursor of the last update, to skip repeat work
 let pending = null;  // suggestions held back while a finger is down (calm mode)
 const down = new Set();
 
+let suggestedKeys = new Map(), suggestedShown = null; // label to word for the Suggested words tab, and the labels it shows
+const suggested = createPagedPanel($('suggested'), { label: 'Suggested words', live: $('pager-live'), onPick(label) {
+  const was = document.activeElement, { value } = ta;
+  choose(suggestedKeys.get(label), value.slice(0, caret.start) + value.slice(caret.end), caret.start);
+  // A new result redraws the buttons, so focus goes to the list rather than being dropped at the top of the page.
+  if (!was.isConnected) $('suggested').focus();
+} });
+pagers.push(suggested);
+
 // After a space, a finished word the matcher doesn't know gets a fix offered.
 function findFix(before) {
   const trimmed = before.trimEnd();
@@ -199,12 +217,13 @@ onSpeaking(on => {
 
 function update(force) {
   refreshActions();
-  const { value } = ta, cur = ta.selectionStart;
+  const { value } = ta, cur = document.activeElement === ta ? ta.selectionStart : caret.start;
   if (!force && shown === `${cur}:${value}`) return;
   shown = `${cur}:${value}`;
   const before = value.slice(0, cur);
   const { context, partial } = splitContext(before);
-  fix = partial ? null : findFix(before);
+  // A fix is a suggestion too, so with predictions off there's no underline offering one.
+  fix = partial || !settings.showPredictions ? null : findFix(before);
 
   if (fix) {
     const span = Object.assign(document.createElement('span'), { className: 'fix', textContent: value.slice(fix.start, fix.end) });
@@ -214,15 +233,26 @@ function update(force) {
   }
   mirror.scrollTop = ta.scrollTop;
 
-  const limit = settings.suggestionCount;
-  let words = rank(gatherCandidates({ partial, context, matcher, memory, wordList }), { context, memory, wordList, limit });
-  if (fix) words = [fix.word, ...words.filter(w => w !== fix.word)].slice(0, limit);
+  // One result feeds both the strip (its first few) and the Suggested words tab (up to 30).
+  let words = [];
+  if (settings.showPredictions) {
+    words = rank(gatherCandidates({ partial, context, matcher, memory, wordList }), { context, memory, wordList, limit: 30 });
+    if (fix) words = [fix.word, ...words.filter(w => w !== fix.word)].slice(0, 30);
+  }
   const base = before.slice(0, before.length - partial.length);
-  render(words.map((w, i) => {
-    const label = capitalizeIfStart(w === fix?.word ? value.slice(0, fix.start) : base, memory.display(w));
-    // Screen readers can't see the outline on the best guess or the underline on the typed word.
-    return [w, label, label + (i ? '' : ', best guess') + (w === fix?.word ? `, fix for ${fix.typed}` : '')];
-  }));
+  const labels = words.map(w => capitalizeIfStart(w === fix?.word ? value.slice(0, fix.start) : base, memory.display(w)));
+  // Screen readers can't see the outline on the best guess or the underline on the typed word.
+  render(words.slice(0, settings.suggestionCount).map((w, i) =>
+    [w, labels[i], labels[i] + (i ? '' : ', best guess') + (w === fix?.word ? `, fix for ${fix.typed}` : '')]));
+
+  suggestedKeys = new Map(labels.map((label, i) => [label, words[i]]));
+  $('predictions-off').hidden = settings.showPredictions;
+  $('no-suggestions').hidden = !settings.showPredictions || words.length > 0;
+  // Only a new result goes back to page 1, so paging isn't undone by a repeat update.
+  if (labels.join('\n') !== suggestedShown) {
+    suggestedShown = labels.join('\n');
+    suggested.set(labels, { resetPage: true });
+  }
 }
 
 function render(items) {
@@ -235,8 +265,8 @@ function render(items) {
   }));
 }
 
-function choose(key) {
-  const { value } = ta, cur = ta.selectionStart;
+// The strip picks at the cursor; the Suggested words tab passes the text with the remembered selection taken out.
+function choose(key, value = ta.value, cur = ta.selectionStart) {
   let r, prev;
   if (key === fix?.word) {
     const word = capitalizeIfStart(value.slice(0, fix.start), memory.display(key));
@@ -276,7 +306,10 @@ ta.addEventListener('input', e => {
   }
   update();
 });
+const keepCaret = () => { caret = { start: ta.selectionStart, end: ta.selectionEnd }; };
+ta.addEventListener('blur', keepCaret);
 document.addEventListener('selectionchange', () => { // cursor moved by a tap or arrow key
+  if (document.activeElement === ta) keepCaret();
   if (lastPick && ta.selectionStart !== lastPick.cursor) lastPick = null;
   update();
 });
@@ -340,13 +373,45 @@ menu.addEventListener('close', () => {
 update();
 
 // The buttons keep focus on the text box, and so the phone's keyboard.
-for (const id of ['actions', 'toast']) $(id).addEventListener('pointerdown', e => e.preventDefault());
+for (const id of ['actions', 'toast', 'tabs']) $(id).addEventListener('pointerdown', e => e.preventDefault());
 
-speakBtn.addEventListener('click', () => {
+// Tabs: the arrow keys, Home and End move between them, and Enter, Space or a tap selects one.
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function selectTab(tab) {
+  for (const t of tabs) {
+    t.ariaSelected = String(t === tab);
+    t.tabIndex = t === tab ? 0 : -1;
+    $(t.getAttribute('aria-controls')).hidden = t !== tab;
+  }
+  if (tab === tabs[0]) {
+    ta.focus();
+    ta.setSelectionRange(caret.start, caret.end);
+  } else {
+    ta.blur(); // closes the phone's keyboard so the panel has room; the blur keeps the caret
+    refreshPanels(); // a hidden panel can't measure how many buttons fit
+  }
+}
+$('tabs').addEventListener('click', e => { const t = e.target.closest('[role="tab"]'); if (t) selectTab(t); });
+$('tabs').addEventListener('keydown', e => {
+  const i = tabs.indexOf(e.target), n = tabs.length;
+  const to = { ArrowRight: i + 1, ArrowLeft: i - 1 + n, Home: 0, End: n - 1 }[e.key];
+  if (i < 0 || to === undefined) return;
+  e.preventDefault();
+  tabs[to % n].focus();
+});
+$('predictions-on').addEventListener('click', () => {
+  changeSetting('showPredictions', true);
+  $('suggested').focus(); // the button just went away
+});
+
+let spokeAt = -Infinity;
+speakBtn.addEventListener('click', e => {
+  if (e.timeStamp - spokeAt < 500) return; // a tremor's double tap mustn't stop the message it just started
   if (speaking) return stop();
   const text = ta.value;
   if (!text.trim()) return;
   const spoke = speak(text, settings, noSpeech, speechStarted);
+  if (spoke) spokeAt = e.timeStamp;
   learn(text, spoke ? '' : NO_SPEECH, 6000);
   if (settings.clearAfterSpeak) setText('', 0);
 });
@@ -382,7 +447,7 @@ $('recent-list').addEventListener('click', e => {
 // Settings
 
 const settingsBox = $('settings'), learnedBox = $('learned'), confirmBox = $('confirm');
-for (const box of [settingsBox, learnedBox]) box.addEventListener('close', () => ta.focus());
+for (const box of [settingsBox, learnedBox]) box.addEventListener('close', () => { if (typing()) ta.focus(); });
 
 function renderSettings() {
   for (const b of settingsBox.querySelectorAll('.seg button')) {
@@ -399,7 +464,7 @@ function changeSetting(key, value) {
   if (key === 'paused') memory.paused = value;
   applySettings();
   store.set('settings', settings).catch(() => showBanner(NO_MEMORY));
-  if (key === 'suggestionCount') update(true);
+  if (key === 'suggestionCount' || key === 'showPredictions') update(true);
   renderSettings();
 }
 
