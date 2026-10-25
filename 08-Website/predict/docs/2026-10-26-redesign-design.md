@@ -14,7 +14,7 @@ Builds on: `2026-10-24-text-predictor-design.md`. Everything there still applies
   - Undo dimmed when there's nothing to undo
   - a settings cog at the top right
   - favourite words
-  - paged panels with Previous, Next, green dots and "Page X of Y"
+  - paged panels with Previous, Next and green dots. There are no visible page numbers (Jess's change, see section 5)
 - **Keep the phone's own keyboard.** There is no on-screen keyboard and no comma/space keys.
 - **Settings apply instantly**, as now. There is no Save/Cancel.
 - **Copy, Recent and "What it has learned"** move behind a **More** button beside the cog.
@@ -84,12 +84,17 @@ The old top quick-phrase row and the old bottom action row (Copy, Recent, Learne
 - **Independent pages:** each collection remembers its own page while the app is open.
   - After a delete or a resize, the page is clamped so it's never past the last page.
   - Suggested resets to page 1 on new results.
-- **Controls:** a row below the buttons with Previous, the dots, and Next, plus the text "Page X of Y".
+- **Controls:** a row below the buttons with Previous, the dots, and Next. There's no "Page X of Y" text and no numbers on screen.
   - Previous is disabled on page 1 and Next on the last page. There's no wrapping.
-  - The current dot is solid green and larger; the others are smaller outlined green dots.
+  - **Dots that fade:**
+    - The current page's dot is solid, larger and full strength.
+    - Every other dot is smaller and lighter the further it is from the current page: one away is lighter, two away lighter again, and so on.
+    - The faintest dot still keeps at least 3:1 contrast against the background, so it stays visible and tappable.
+    - As the person pages forward, the fade moves with them.
   - Each dot is a button with a hit area of at least 48 px and the name "Go to page X of Y". The current one has `aria-current="page"`.
-  - With more than 7 pages, show a window of 7 dots around the current page. Previous, Next and the page text still reach every page.
+  - With more than 7 pages, show a window of 7 dots around the current page. Previous and Next still reach every page.
   - The whole row is hidden when there's only one page.
+  - The page number stays available to screen readers through the dots' names and the announcement below; it just isn't shown.
 - **Swipe:**
   - A horizontal swipe of at least 40 px that's more sideways than up-and-down changes one page: left goes forward, right goes back.
   - A swipe never selects the button it started on. Vertical or cancelled gestures select nothing.
