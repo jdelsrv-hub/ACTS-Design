@@ -1,5 +1,5 @@
 import { test, eq, ok } from './harness.js';
-import { tokenize, splitContext, applySuggestion, shouldLearn } from '../js/text.js';
+import { tokenize, splitContext, applySuggestion, shouldLearn, insertPhrase } from '../js/text.js';
 
 test('tokenize keeps apostrophes, drops numbers and emoji', () => {
   eq(tokenize("I don't have 2 cats 🐱, ok?").map(t => t.key), ['i', "don't", 'have', 'cats', 'ok']);
@@ -30,4 +30,10 @@ test('splitContext handles accented letters', () => {
 });
 test('shouldLearn ignores empty and repeats', () => {
   ok(!shouldLearn('   ', null)); ok(!shouldLearn('Hi there', 'Hi there ')); ok(shouldLearn('Hi there', 'Bye'));
+});
+test('insertPhrase at end, mid-sentence and over a selection', () => {
+  eq(insertPhrase('I would like', 12, 12, 'coffee'), {text: 'I would like coffee ', cursor: 20});
+  eq(insertPhrase('I want  now', 7, 7, 'tea'), {text: 'I want tea now', cursor: 11});
+  eq(insertPhrase('I want milk now', 7, 11, 'tea'), {text: 'I want tea now', cursor: 11});
+  eq(insertPhrase('', 0, 0, 'I need help'), {text: 'I need help ', cursor: 12});
 });

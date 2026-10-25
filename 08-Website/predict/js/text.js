@@ -59,6 +59,16 @@ export function applySuggestion(text, cursor, word) {
   };
 }
 
+// Put a whole phrase in place of text[start, end), spaced so it never doubles a space.
+export function insertPhrase(text, start, end, phrase) {
+  const lead = start > 0 && !/\s/.test(text[start - 1]) ? ' ' : '';
+  const trail = /\s/.test(text[end] ?? '') ? '' : ' ';
+  return {
+    text: text.slice(0, start) + lead + phrase + trail + text.slice(end),
+    cursor: start + lead.length + phrase.length + 1,
+  };
+}
+
 export function shouldLearn(text, lastLearned) {
   const trimmed = text.trim();
   return trimmed !== '' && trimmed !== lastLearned?.trim();
