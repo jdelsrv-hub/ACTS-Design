@@ -1,5 +1,5 @@
 import { test, eq, ok } from './harness.js';
-import { speak, listVoices } from '../js/speech.js';
+import { speak, listVoices, onSpeaking, stop } from '../js/speech.js';
 
 // Swaps in a fake speechSynthesis, utterance and timers while fn runs, so nothing really speaks or waits.
 // fn gets the fake synth, the pending timers ({fn, ms} by id) and a flush that runs them all.
@@ -81,6 +81,40 @@ test('a start after the 2 s failure reports the recovery', async () => {
     fire(synth.calls[1], 'start'); eq(recovered, 0);
     speak('late', settings, () => fails++, () => recovered++);
     flush(); fire(synth.calls[3], 'start'); eq([fails, recovered], [1, 1]);
+  });
+});
+// stop() first: an earlier test's utterance may still be speaking, and superseding it would report false to this listener.
+const watch = synth => { stop(); synth.calls.length = 0; const seen = []; onSpeaking(v => seen.push(v)); return seen; };
+test('start then end reports true then false', async () => {
+  await fake([], synth => {
+    const seen = watch(synth);
+    speak('hi', settings); fire(synth.calls[1], 'start'); eq(seen, [true]);
+    fire(synth.calls[1], 'end'); fire(synth.calls[1], 'end'); eq(seen, [true, false]);
+  });
+});
+test('stop reports false and no failure', async () => {
+  await fake([], (synth, timers) => {
+    const seen = watch(synth);
+    let fails = 0;
+    speak('hi', settings, () => fails++); fire(synth.calls[1], 'start');
+    stop(); eq([synth.calls.at(-1), seen, timers.size], ['cancel', [true, false], 0]);
+    fire(synth.calls[1], 'error', 'interrupted'); eq([fails, seen], [0, [true, false]]);
+    stop(); eq(seen, [true, false]);
+  });
+});
+test('a second speak while speaking reports false for the first only once, then true for the second', async () => {
+  await fake([], synth => {
+    const seen = watch(synth);
+    speak('one', settings); fire(synth.calls[1], 'start');
+    speak('two', settings); fire(synth.calls[1], 'error', 'interrupted'); fire(synth.calls[1], 'end');
+    fire(synth.calls[3], 'start'); eq(seen, [true, false, true]);
+  });
+});
+test('no start within 2 s reports false once, and a late start reports true then false', async () => {
+  await fake([], (synth, timers, flush) => {
+    const seen = watch(synth);
+    speak('hi', settings); flush(); fire(synth.calls[1], 'error', 'synthesis-failed'); eq(seen, [false]);
+    fire(synth.calls[1], 'start'); fire(synth.calls[1], 'end'); eq(seen, [false, true, false]);
   });
 });
 test('listVoices gives up after 1 s when no voices ever load', async () => {
