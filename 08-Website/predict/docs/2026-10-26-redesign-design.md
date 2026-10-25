@@ -92,7 +92,7 @@ The old top quick-phrase row and the old bottom action row (Copy, Recent, Learne
     - The faintest dot still keeps at least 3:1 contrast against the background, so it stays visible and tappable.
     - As the person pages forward, the fade moves with them.
   - Each dot is a button with a hit area of at least 48 px and the name "Go to page X of Y". The current one has `aria-current="page"`.
-  - With more than 7 pages, show a window of 7 dots around the current page. Previous and Next still reach every page.
+  - Show as many dots as fit on one line between Previous and Next, at most 7 and at least 3, centred on the current page. The row never wraps. Previous and Next still reach every page.
   - The whole row is hidden when there's only one page.
   - The page number stays available to screen readers through the dots' names and the announcement below; it just isn't shown.
 - **Swipe:**
