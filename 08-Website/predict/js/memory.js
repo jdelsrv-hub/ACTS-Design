@@ -13,7 +13,6 @@ export function createMemory(snapshot) {
   s.slips = table();
   for (const typed in snapshot?.slips) s.slips[typed] = table(snapshot.slips[typed]);
   s.blocked = [...s.blocked];
-  s.favourites = [...s.favourites];
   s.pins = s.pins.filter(p => p in s.phrases); // drop ghost pins so pinned() and phrases() agree
 
   let paused = false;
@@ -45,10 +44,15 @@ export function createMemory(snapshot) {
   // A favourite is usable when it is non-blank, short, and not already there (ignoring case and the slot being renamed).
   const favouriteOk = (word, except = -1) => word !== '' && word.length <= 60
     && !s.favourites.some((f, i) => i !== except && f.toLowerCase() === word.toLowerCase());
+  const has = (list, i) => Number.isInteger(i) && i in list;
   const swap = (list, i, delta) => {
     const j = i + delta;
-    if (i in list && j in list) [list[i], list[j]] = [list[j], list[i]];
+    if (has(list, i) && has(list, j)) [list[i], list[j]] = [list[j], list[i]];
   };
+  // Stored or restored favourites get the same rules as typed ones.
+  const loaded = s.favourites;
+  s.favourites = [];
+  for (const f of loaded) if (favouriteOk(f.trim())) s.favourites.push(f.trim());
 
   const reindex = () => {
     next.clear();
@@ -175,7 +179,7 @@ export function createMemory(snapshot) {
     movePin: (index, delta) => swap(s.pins, index, delta),
     renamePin(index, text) {
       const phrase = text.trim();
-      if (!(index in s.pins) || !phrase || s.pins.includes(phrase)) return false;
+      if (!has(s.pins, index) || !phrase || s.pins.includes(phrase)) return false;
       s.phrases[phrase] ??= { count: 0, lastUsed: Date.now(), offered: false };
       s.pins[index] = phrase;
       return true;
@@ -191,7 +195,7 @@ export function createMemory(snapshot) {
     },
     renameFavourite(index, word) {
       const w = word.trim();
-      if (!(index in s.favourites) || !favouriteOk(w, index)) return false;
+      if (!has(s.favourites, index) || !favouriteOk(w, index)) return false;
       s.favourites[index] = w;
       return true;
     },

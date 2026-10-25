@@ -63,3 +63,5 @@ test('movePin does nothing at the ends; renamePin keeps the old phrase and refus
   const m = createMemory(); ['Yes', 'No'].forEach(p => m.pinPhrase(p)); m.movePin(0, -1); m.movePin(1, 1); eq(m.pinned(), ['Yes', 'No']);
   ok(!m.renamePin(0, '  ')); ok(m.renamePin(0, 'Sure')); eq(m.phrases().map(p => p.text).sort(), ['No', 'Sure', 'Yes']); eq(m.phrases().find(p => p.text === 'Sure').count, 0);
 });
+test('favourites are cleaned on load', () => { eq(createMemory({...createMemory().toJSON(), favourites: ['', ' tea ', 'Tea', 'x'.repeat(61), 'coffee']}).favourites(), ['tea', 'coffee']); });
+test('bad indexes change nothing', () => { const m = createMemory(); ['a', 'b'].forEach(w => { m.addFavourite(w); m.pinPhrase(w); }); m.moveFavourite(0.5, 1); m.movePin('1', -1); ok(!m.renameFavourite(1.5, 'z')); ok(!m.renamePin(NaN, 'z')); eq(m.favourites(), ['a', 'b']); eq(m.pinned(), ['a', 'b']); });
