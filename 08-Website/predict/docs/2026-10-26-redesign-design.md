@@ -119,7 +119,7 @@ Each theme defines its own action colours. Text contrast is at least 4.5:1 in ev
 
 - **High contrast** drops the colour coding, because yellow-on-yellow can't work. The labels and fixed positions carry the meaning.
 - **Disabled** buttons use reduced contrast plus `aria-disabled`, which is allowed for inactive controls.
-- **Page dots** use the theme's green, or yellow in high contrast.
+- **Page dots** use the theme's green, or black in high contrast. The dots sit on the yellow page background there, so yellow would vanish.
 
 ## 8. More menu
 
