@@ -51,8 +51,8 @@ header label { flex: 1; font-weight: 700; }
   position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 10px 12px; border: 0;
   font: inherit; white-space: pre-wrap; overflow-wrap: break-word; overflow-y: auto; scrollbar-gutter: stable;
 }
-/* Off the Keyboard tab the phone keyboard is closed and the box scrolls, so at big text sizes the list gets the room. */
-body:has(#panel-keyboard[hidden]) #editor { min-height: 2.5em; }
+/* Off the Keyboard tab the box keeps only its minimum (it scrolls, and an insert scrolls into view), so the list gets the rest. */
+body:has(#panel-keyboard[hidden]) #editor { flex: none; min-height: 2.5em; }
 #mirror { color: transparent; overflow: hidden; }
 #text { background: transparent; color: var(--fg); resize: none; border-radius: 10px; }
 .fix { text-decoration: underline dotted var(--fg); text-decoration-thickness: 3px; text-underline-offset: 0.15em; }
