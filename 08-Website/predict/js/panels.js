@@ -1,5 +1,5 @@
-// A paged two-column list of word or phrase buttons, with Previous, page dots and Next below.
-import { perPage, pageCount, clampPage, pageSlice, dotWindow, dotLook } from './pager.js';
+// A paged list of word or phrase buttons in columns, with Previous, page dots and Next below.
+import { packPages, clampPage, pageSlice, dotWindow, dotLook } from './pager.js';
 
 const button = (text, aria) => {
   const b = document.createElement('button');
@@ -10,8 +10,8 @@ const button = (text, aria) => {
 };
 
 // minPress is tap safety: a pointer press shorter than it (ms) picks nothing.
-export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}) {
-  let items = [], page = 0, size = 2, maxDots = 7, start = null, swipedAt = -Infinity, pressedAt = -Infinity, armTimer, armed = null;
+export function createPagedPanel(root, {label, onPick, live, minPress = () => 0, columns = 2}) {
+  let items = [], page = 0, starts = [0], maxDots = 7, start = null, swipedAt = -Infinity, pressedAt = -Infinity, armTimer, armed = null;
   const grid = document.createElement('div'), nav = document.createElement('div'), dots = document.createElement('div');
   // Backstop for a page that still doesn't fit; screen readers reach every item anyway, so it's hidden from them.
   const more = Object.assign(document.createElement('p'), {className: 'more', textContent: '▼︎ more', hidden: true});
@@ -19,6 +19,7 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
   // U+FE0E keeps the arrows as text, not emoji.
   const prev = button('◀︎', 'Previous'), next = button('▶︎', 'Next');
   grid.className = 'paged-grid';
+  grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
   nav.className = 'paged-nav';
   dots.className = 'dots';
   nav.append(prev, dots, next);
@@ -31,9 +32,9 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
   const focusFirst = () => (grid.firstElementChild || root).focus();
 
   function render() {
-    const count = pageCount(items.length, size);
+    const count = starts.length;
     const focused = document.activeElement, inNav = nav.contains(focused);
-    grid.replaceChildren(...pageSlice(items, page, size).map(item => {
+    grid.replaceChildren(...pageSlice(items, starts, page).map(item => {
       const b = button(item);
       b.onclick = e => {
         // detail 0 means a keyboard, switch or screen reader activated it, so tap safety doesn't apply.
@@ -70,8 +71,8 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
   }
 
   function go(to) {
-    const count = pageCount(items.length, size);
-    to = Math.min(Math.max(to, 0), count - 1);
+    const count = starts.length;
+    to = clampPage(to, count);
     if (to === page) return;
     page = to;
     render();
@@ -79,21 +80,21 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
     live.textContent = `${label}, page ${page + 1} of ${count}`;
   }
 
-  // Page size is however many rows fit the grid, measured with the nav showing. Every row is counted as tall as
-  // the tallest item (all of them are laid out once to find it), so no item on any page is ever out of view.
+  // Pages are packed from every item's height at the current width and text size, measured with the nav showing,
+  // so a long phrase takes room only on its own page and no item on any page is ever out of view.
   // Only as many 48 px dots as fit beside Previous and Next, so the nav never wraps onto a second row.
   function refresh() {
     nav.hidden = false;
     more.hidden = true;
     root.style.minHeight = '';
     maxDots = Math.max(3, Math.min(7, Math.floor(dots.clientWidth / 48)));
-    grid.replaceChildren(button('Ag'), ...items.map(item => button(item)));
-    const row = Math.max(...[...grid.children].map(b => b.offsetHeight));
-    const gap = parseFloat(getComputedStyle(grid).rowGap) || 0;
-    // The panel never shrinks below one such row and the nav; the page scrolls instead. 0 means it's hidden.
-    if (row) root.style.minHeight = `${row + gap + nav.offsetHeight}px`;
-    size = perPage(grid.clientHeight + gap, row + gap);
-    page = clampPage(page, items.length, size);
+    grid.replaceChildren(...items.map(item => button(item)));
+    const heights = [...grid.children].map(b => b.offsetHeight);
+    const gap = parseFloat(getComputedStyle(grid).rowGap) || 0, tallest = Math.max(0, ...heights);
+    // The panel never shrinks below the tallest item and the nav; the page scrolls instead. 0 means it's hidden.
+    if (tallest) root.style.minHeight = `${tallest + gap + nav.offsetHeight}px`;
+    starts = packPages(heights, grid.clientHeight, columns, gap);
+    page = clampPage(page, starts.length);
     render();
   }
 

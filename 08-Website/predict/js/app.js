@@ -212,7 +212,8 @@ function insert(phrase) {
   setText(r.text, r.cursor);
 }
 const favourites = createPagedPanel($('favourites'), { label: 'Favourite words', live, minPress, onPick: insert });
-const phrases = createPagedPanel($('phrases'), { label: 'Quick phrases', live, minPress, onPick: p => settings.phraseSpeaks ? say(p) : insert(p) });
+// One column: phrases are long, and two narrow columns wrap them over many lines.
+const phrases = createPagedPanel($('phrases'), { label: 'Quick phrases', live, minPress, columns: 1, onPick: p => settings.phraseSpeaks ? say(p) : insert(p) });
 pagers.push(suggested, favourites, phrases);
 renderFavourites();
 renderPhrases();

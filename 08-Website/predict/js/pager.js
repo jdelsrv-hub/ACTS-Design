@@ -1,16 +1,27 @@
-// Paging helpers for the suggestion grid and its page dots. Pure functions, no DOM.
+// Paging helpers for the paged word and phrase lists and their page dots. Pure functions, no DOM.
 // Pages are zero-based.
 
-export function perPage(panelHeight, rowHeight, columns = 2) {
-  if (panelHeight <= 0 || rowHeight <= 0) return 2;
-  return Math.max(2, Math.floor(panelHeight / rowHeight) * columns);
+// Start index of each page. Items go in rows of `columns`, each row as tall as its tallest item, and a page
+// takes rows while they fit `available` (with `gap` between rows). A page always gets at least one row,
+// so an item taller than the space is alone on its page.
+export function packPages(heights, available, columns, gap) {
+  const starts = [0];
+  let used = 0;
+  for (let i = 0; i < heights.length; i += columns) {
+    const row = Math.max(...heights.slice(i, i + columns));
+    if (i > starts.at(-1) && used + gap + row > available) {
+      starts.push(i);
+      used = row;
+    } else {
+      used += (i > starts.at(-1) ? gap : 0) + row;
+    }
+  }
+  return starts;
 }
 
-export const pageCount = (n, size) => Math.max(1, Math.ceil(n / size));
+export const clampPage = (page, count) => Math.min(Math.max(page, 0), count - 1);
 
-export const clampPage = (page, n, size) => Math.min(Math.max(page, 0), pageCount(n, size) - 1);
-
-export const pageSlice = (items, page, size) => items.slice(page * size, (page + 1) * size);
+export const pageSlice = (items, starts, page) => items.slice(starts[page], starts[page + 1]);
 
 // The dots to draw: all pages, or a run of `max` containing `page`, as centred as it can be.
 export function dotWindow(page, count, max = 7) {

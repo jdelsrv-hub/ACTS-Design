@@ -275,3 +275,19 @@ test('with a minimum press, an item shows it is armed once held that long', () =
   pointer(b, 'pointerup', 100, 100);
   ok(!b.classList.contains('armed'), 'disarmed on lifting');
 }, 600, {minPress: () => 50}));
+
+test('a one-column panel stacks items, and a long item takes fewer items on its page only', () => withPanel(ui => {
+  const list = words(30);
+  list.splice(3, 0, `${LONG} ${LONG}`);
+  ui.panel.set(list);
+  const grid = ui.root.querySelector('.paged-grid'), [a, b] = ui.root.querySelectorAll('.paged-grid button');
+  eq(a.offsetLeft, b.offsetLeft, 'one column');
+  const counts = [];
+  for (;;) {
+    counts.push(ui.items().length);
+    ok(fits(grid), `page ${ui.panel.page} hides ${grid.scrollHeight - grid.clientHeight} px`);
+    if (ui.nav.hidden || ui.next.disabled) break;
+    ui.next.click();
+  }
+  ok(counts[0] < counts[1], `the page with the long item holds fewer: ${counts}`);
+}, 300, {columns: 1}));
