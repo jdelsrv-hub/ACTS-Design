@@ -50,6 +50,8 @@ header label { flex: 1; font-weight: 700; }
   position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 10px 12px; border: 0;
   font: inherit; white-space: pre-wrap; overflow-wrap: break-word; overflow-y: auto; scrollbar-gutter: stable;
 }
+/* Off the Keyboard tab the phone keyboard is closed and the box scrolls, so at big text sizes the list gets the room. */
+body:has(#panel-keyboard[hidden]) #editor { min-height: 2.5em; }
 #mirror { color: transparent; overflow: hidden; }
 #text { background: transparent; color: var(--fg); resize: none; border-radius: 10px; }
 .fix { text-decoration: underline dotted var(--fg); text-decoration-thickness: 3px; text-underline-offset: 0.15em; }
@@ -67,7 +69,7 @@ header label { flex: 1; font-weight: 700; }
 #undo { background: var(--undo-bg); color: var(--undo-fg); }
 #clear { background: var(--clear-bg); color: var(--clear-fg); }
 /* Reduced contrast is allowed for inactive controls; aria-disabled keeps them focusable and announced. */
-[aria-disabled="true"] { opacity: 0.4; }
+[aria-disabled="true"], button:disabled { opacity: 0.4; }
 
 #tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; flex: none; padding-bottom: 6px; }
 [role="tab"] { min-height: 56px; padding: 4px 0; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere;
@@ -78,12 +80,16 @@ header label { flex: 1; font-weight: 700; }
 [data-size="extra-large"] [role="tab"], [data-size="huge"] [role="tab"] { font-size: 0.6em; }
 /* Filled plus a thick bottom edge, so the chosen tab doesn't rely on colour alone. */
 [role="tab"][aria-selected="true"] { background: var(--best); color: var(--bg); box-shadow: 0 6px var(--fg); }
+/* High contrast fills the tab black, so a yellow gap keeps the black edge visible. */
+[data-contrast="high"] [role="tab"][aria-selected="true"] { box-shadow: 0 3px var(--bg), 0 9px var(--fg); }
 /* Only the strip shows on Keyboard, so the text box keeps the height above the phone's keyboard. */
 #panels { display: flex; flex-direction: column; flex: 2 1 0; min-height: 0; }
 #panels:has(> #panel-keyboard:not([hidden])) { flex: none; }
 /* auto, not 0: on Keyboard the panels box takes its height from the strip. */
 [role="tabpanel"] { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; }
-.status { margin: 0; flex: none; }
+.status, [role="tabpanel"] > button { margin: 0; flex: none; }
+/* 6vw keeps "Save message as a phrase" on one line on a phone at every text size, so the list keeps its room. */
+[role="tabpanel"] > button { font-size: min(1em, 6vw); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 #toast:empty { display: none; }
@@ -114,7 +120,7 @@ legend { padding: 0; font-weight: 700; }
 .switch { display: flex; align-items: center; gap: 12px; min-height: 48px; }
 .switch input { flex: none; width: 40px; height: 40px; margin: 0; }
 .field { display: grid; gap: 4px; font-weight: 700; }
-.field select, .field textarea { width: 100%; font: inherit; color: var(--fg); background: var(--field); border: 2px solid var(--line); border-radius: 12px; min-height: 48px; padding: 4px 8px; }
+.field select, .field textarea, .field input[type="text"], .list input { width: 100%; font: inherit; color: var(--fg); background: var(--field); border: 2px solid var(--line); border-radius: 12px; min-height: 48px; padding: 4px 8px; }
 .field input[type="range"] { width: 100%; height: 48px; margin: 0; }
 .hint { font-weight: 400; font-size: 0.75em; }
 .trio { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -123,6 +129,10 @@ legend { padding: 0; font-weight: 700; }
 .list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .list li > span:first-child { flex: 1 1 6em; overflow-wrap: anywhere; }
 .list .count { font-size: 0.75em; }
+/* A refused name or add, at full size so it is seen. */
+.note { margin: 0; font-weight: 700; }
+[data-list] { gap: 8px; }
+.list input { flex: 1 1 8em; min-width: 0; }
 /* Stays in view at the bottom of a long dialog. */
 .close { position: sticky; bottom: 0; }
 
@@ -133,7 +143,6 @@ legend { padding: 0; font-weight: 700; }
 /* max-content rows: auto rows in a full grid shrink and cut a long wrapped label off. */
 .paged-grid button { min-height: 56px; white-space: normal; overflow-wrap: anywhere; }
 .paged-nav { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
-.paged-nav > button:disabled { opacity: 0.4; }
 .dots { display: flex; justify-content: center; }
 .dots button { display: grid; place-items: center; padding: 0; border: 0; background: none; }
 .dots span { border-radius: 50%; background: var(--dot); }

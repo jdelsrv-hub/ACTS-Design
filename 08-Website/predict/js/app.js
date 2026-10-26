@@ -1,5 +1,5 @@
 // Writing screen: wires the text box, suggestion buttons and long-press menu to the engine.
-import { splitContext, capitalizeIfStart, applySuggestion, shouldLearn, tokenize } from './text.js';
+import { splitContext, capitalizeIfStart, applySuggestion, insertPhrase, shouldLearn, tokenize } from './text.js';
 import { loadWordList, parseWordList } from './wordlist.js';
 import { createMemory } from './memory.js';
 import { createMatcher } from './spelling.js';
@@ -169,9 +169,19 @@ function say(text) {
   if (!speak(text, settings, noSpeech, speechStarted)) noSpeech();
 }
 
-// Does nothing until the Quick phrases panel exists.
+// The empty-state button stands in for an empty list.
+function renderFavourites() {
+  const list = memory.favourites();
+  $('add-favourites').hidden = list.length > 0;
+  $('favourites').hidden = !list.length;
+  favourites.set(list); // after the show and hide, so it measures the room that's left
+}
 function renderPhrases() {
-  $('phrases')?.replaceChildren(...memory.pinned().map(p => Object.assign(document.createElement('button'), { type: 'button', textContent: p })));
+  const list = memory.pinned();
+  $('phrases-speak').hidden = !settings.phraseSpeaks;
+  $('add-phrases').hidden = list.length > 0;
+  $('phrases').hidden = !list.length;
+  phrases.set(list);
 }
 
 let fix = null;      // {typed, word, prev, start, end}: the misspelled word just before the cursor
@@ -181,13 +191,29 @@ let pending = null;  // suggestions held back while a finger is down (calm mode)
 const down = new Set();
 
 let suggestedKeys = new Map(), suggestedShown = null; // label to word for the Suggested words tab, and the labels it shows
-const suggested = createPagedPanel($('suggested'), { label: 'Suggested words', live: $('pager-live'), onPick(label) {
-  const was = document.activeElement, { value } = ta;
+const live = $('pager-live'), minPress = () => settings.tapSafety ? 300 : 0; // tap safety covers every paged list, like the strip
+const suggested = createPagedPanel($('suggested'), { label: 'Suggested words', live, minPress, onPick(label) {
+  const { value } = ta;
   choose(suggestedKeys.get(label), value.slice(0, caret.start) + value.slice(caret.end), caret.start);
-  // A new result redraws the buttons, so focus goes to the list rather than being dropped at the top of the page.
-  if (!was.isConnected) $('suggested').focus();
 } });
-pagers.push(suggested);
+// Favourites and phrases go in whole at the remembered cursor, or over the remembered selection.
+function insert(phrase) {
+  const r = insertPhrase(ta.value, caret.start, caret.end, phrase);
+  setText(r.text, r.cursor);
+}
+const favourites = createPagedPanel($('favourites'), { label: 'Favourite words', live, minPress, onPick: insert });
+const phrases = createPagedPanel($('phrases'), { label: 'Quick phrases', live, minPress, onPick: p => settings.phraseSpeaks ? say(p) : insert(p) });
+pagers.push(suggested, favourites, phrases);
+renderFavourites();
+renderPhrases();
+$('save-phrase').addEventListener('click', () => {
+  const text = ta.value.trim();
+  if (!text) return;
+  memory.pinPhrase(text);
+  saveMemory();
+  renderPhrases();
+  toast(`Pinned "${text}"`);
+});
 
 // After a space, a finished word the matcher doesn't know gets a fix offered.
 function findFix(before) {
@@ -401,7 +427,7 @@ $('tabs').addEventListener('keydown', e => {
 });
 $('predictions-on').addEventListener('click', () => {
   changeSetting('showPredictions', true);
-  $('suggested').focus(); // the button just went away
+  suggested.focus(); // the button just went away
 });
 
 let spokeAt = -Infinity;
@@ -447,7 +473,8 @@ $('recent-list').addEventListener('click', e => {
 // Settings
 
 const settingsBox = $('settings'), learnedBox = $('learned'), confirmBox = $('confirm');
-for (const box of [settingsBox, learnedBox]) box.addEventListener('close', () => { if (typing()) ta.focus(); });
+learnedBox.addEventListener('close', () => { if (typing()) ta.focus(); });
+settingsBox.addEventListener('close', () => $('open-settings').focus());
 
 function renderSettings() {
   for (const b of settingsBox.querySelectorAll('.seg button')) {
@@ -465,17 +492,24 @@ function changeSetting(key, value) {
   applySettings();
   store.set('settings', settings).catch(() => showBanner(NO_MEMORY));
   if (key === 'suggestionCount' || key === 'showPredictions') update(true);
+  if (key === 'phraseSpeaks') renderPhrases();
   renderSettings();
 }
 
-$('open-settings').addEventListener('click', () => {
+// From an empty panel, Settings opens at that list with its add box focused (focusing scrolls it into view).
+function openSettings(focus) {
   settingsBox.showModal();
   renderSettings();
+  settingsBox.querySelectorAll('[data-list]').forEach(renderList);
+  focus?.focus();
   listVoices().then(voices => {
     settingsBox.querySelector('select').replaceChildren(new Option('Phone default', ''), ...voices.map(v => new Option(`${v.name} (${v.lang})`, v.voiceURI)));
     renderSettings();
   });
-});
+}
+$('open-settings').addEventListener('click', () => openSettings());
+$('add-favourites').addEventListener('click', () => openSettings($('favourite-input')));
+$('add-phrases').addEventListener('click', () => openSettings($('phrase-input')));
 settingsBox.addEventListener('click', e => {
   const b = e.target.closest('.seg button');
   if (!b) return;
@@ -507,6 +541,94 @@ const act = (textContent, ariaLabel, name, id) => {
   Object.assign(b.dataset, { act: name, id });
   return b;
 };
+
+// Favourite words and Quick phrases in Settings share one list editor. memory is read at call time, as Restore replaces it.
+const lists = {
+  favourites: { noun: 'word', items: () => memory.favourites(), name: w => w, render: () => renderFavourites(),
+    add: w => memory.addFavourite(w), rename: (i, w) => memory.renameFavourite(i, w), remove: i => memory.removeFavourite(i), move: (i, d) => memory.moveFavourite(i, d) },
+  phrases: { noun: 'phrase', items: () => memory.pinned(), name: p => `"${p}"`, render: () => renderPhrases(),
+    add: p => !memory.pinned().includes(p) && (memory.pinPhrase(p), true), rename: (i, p) => memory.renamePin(i, p),
+    remove: i => memory.unpinPhrase(memory.pinned()[i]), move: (i, d) => memory.movePin(i, d) },
+};
+const listOf = box => lists[box.dataset.list];
+const rowButton = (box, i, name) => box.querySelectorAll('li')[i]?.querySelector(`[data-act="${name}"]`);
+
+function renderList(box) {
+  const kind = listOf(box), items = kind.items();
+  box.querySelector('.list').replaceChildren(...(items.length ? items.map((text, i) => {
+    const name = kind.name(text);
+    // Up and Down are visible words inside the names, so speech control can say "click Up".
+    const up = act('Up', `Move ${name} up`, 'up', i), down = act('Down', `Move ${name} down`, 'down', i);
+    up.disabled = i === 0;
+    down.disabled = i === items.length - 1;
+    return li(span(text), act('Rename', `Rename ${name}`, 'rename', i), act('Remove', `Remove ${name}`, 'remove', i), up, down);
+  }) : [li('Nothing yet.')]));
+}
+
+// Every change saves and redraws both this list and its panel.
+function listChanged(box) {
+  saveMemory();
+  listOf(box).render();
+  renderList(box);
+}
+
+// Rename edits in the row: a field, Save, Cancel, and a line saying why a name was refused.
+function startRename(box, i) {
+  renderList(box); // closes any other row being renamed
+  const kind = listOf(box), text = kind.items()[i], row = box.querySelectorAll('li')[i];
+  const input = Object.assign(document.createElement('input'), { type: 'text', value: text, ariaLabel: `Rename ${kind.name(text)}`, autocomplete: 'off' });
+  if (kind.noun === 'word') input.maxLength = 60;
+  const note = span('', 'note');
+  note.setAttribute('role', 'status');
+  row.replaceChildren(input, act('Save', null, 'save', i), act('Cancel', null, 'cancel', i), note);
+  input.focus();
+  input.select();
+}
+
+const refusal = (kind, text) => text ? `That ${kind.noun} is already there` : `Type a ${kind.noun} first`;
+
+settingsBox.addEventListener('click', e => {
+  const b = e.target.closest('[data-list] [data-act]');
+  if (!b) return;
+  const box = b.closest('[data-list]'), kind = listOf(box), i = Number(b.dataset.id), name = b.dataset.act;
+  if (name === 'add') {
+    const input = box.querySelector('label input'), text = input.value.trim(), note = box.querySelector(':scope > .note');
+    if (!text || !kind.add(text)) return void (note.textContent = refusal(kind, text));
+    input.value = note.textContent = '';
+    listChanged(box);
+  } else if (name === 'remove') {
+    kind.remove(i);
+    listChanged(box);
+    // Focus stays in the list: the next row's Remove, else the one before, else the add box.
+    (rowButton(box, i, 'remove') ?? rowButton(box, i - 1, 'remove') ?? box.querySelector('label input')).focus();
+  } else if (name === 'up' || name === 'down') {
+    const to = i + (name === 'up' ? -1 : 1);
+    kind.move(i, to - i);
+    listChanged(box);
+    // The same button on the moved row, or its other move button once that row reaches the end.
+    const same = rowButton(box, to, name);
+    (same.disabled ? rowButton(box, to, name === 'up' ? 'down' : 'up') : same).focus();
+  } else if (name === 'rename') {
+    startRename(box, i);
+  } else if (name === 'save') {
+    const row = b.closest('li'), text = row.querySelector('input').value.trim();
+    if (text !== kind.items()[i] && !kind.rename(i, text)) return void (row.querySelector('.note').textContent = refusal(kind, text));
+    listChanged(box);
+    rowButton(box, i, 'rename').focus();
+  } else if (name === 'cancel') {
+    renderList(box);
+    rowButton(box, i, 'rename').focus();
+  }
+});
+// In these boxes Enter would submit the form (closing Settings), so it adds or saves; in a rename, Escape cancels it.
+settingsBox.addEventListener('keydown', e => {
+  const input = e.target.closest('[data-list] input'), row = input?.closest('li');
+  const name = e.key === 'Enter' ? (row ? 'save' : 'add') : e.key === 'Escape' && row ? 'cancel' : null;
+  if (!input || !name) return;
+  e.preventDefault();
+  (row ?? input.closest('[data-list]')).querySelector(`[data-act="${name}"]`).click();
+});
+
 const pinButton = (text, pinned) => act(pinned ? 'Unpin' : 'Pin', `${pinned ? 'Unpin' : 'Pin'} "${text}"`, 'pin', text);
 
 function renderLearned() {
@@ -550,6 +672,7 @@ learnedBox.addEventListener('close', () => {
 function relearn() {
   rebuildMatcher();
   lastLearned = lastPick = null;
+  renderFavourites();
   renderPhrases();
   renderLearned();
   update(true);

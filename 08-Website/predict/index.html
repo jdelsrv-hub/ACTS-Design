@@ -45,10 +45,18 @@ if ('serviceWorker' in navigator && (location.hostname !== '127.0.0.1' || locati
   <div role="tabpanel" id="panel-suggested" aria-labelledby="tab-suggested" hidden>
     <p id="predictions-off" class="status" hidden>Word predictions are off <button type="button" id="predictions-on">Turn on</button></p>
     <p id="no-suggestions" class="status" hidden>No suggestions yet</p>
-    <div id="suggested" tabindex="-1"></div>
+    <div id="suggested"></div>
   </div>
-  <div role="tabpanel" id="panel-favourites" aria-labelledby="tab-favourites" hidden></div>
-  <div role="tabpanel" id="panel-phrases" aria-labelledby="tab-phrases" hidden></div>
+  <div role="tabpanel" id="panel-favourites" aria-labelledby="tab-favourites" hidden>
+    <button type="button" id="add-favourites" hidden>Add favourite words</button>
+    <div id="favourites"></div>
+  </div>
+  <div role="tabpanel" id="panel-phrases" aria-labelledby="tab-phrases" hidden>
+    <p id="phrases-speak" class="status" hidden>Tapping speaks</p>
+    <button type="button" id="save-phrase">Save message as a phrase</button>
+    <button type="button" id="add-phrases" hidden>Add a quick phrase</button>
+    <div id="phrases"></div>
+  </div>
 </div>
 <p id="pager-live" class="visually-hidden" aria-live="polite"></p>
 <dialog id="menu" aria-labelledby="menu-word">
@@ -82,6 +90,7 @@ if ('serviceWorker' in navigator && (location.hostname !== '127.0.0.1' || locati
     <fieldset data-key="contrast"><legend>Colours</legend><div class="seg"><button type="button" data-value="normal">Normal</button><button type="button" data-value="high">High contrast</button><button type="button" data-value="dark">Dark</button></div></fieldset>
     <fieldset data-key="font"><legend>Font</legend><div class="seg"><button type="button" data-value="system">System</button><button type="button" data-value="hyperlegible">Hyperlegible</button></div></fieldset>
     <fieldset data-key="suggestionCount"><legend>Suggestions shown</legend><div class="seg"><button type="button" data-value="3">3</button><button type="button" data-value="4">4</button><button type="button" data-value="5">5</button></div></fieldset>
+    <label class="switch"><input type="checkbox" role="switch" data-key="showPredictions"><span>Show word predictions</span></label>
     <label class="switch"><input type="checkbox" role="switch" data-key="tapSafety"><span>Hold a suggestion a moment to pick it</span></label>
     <label class="switch"><input type="checkbox" role="switch" data-key="speakEachWord"><span>Say each word when I pick it</span></label>
     <label class="switch"><input type="checkbox" role="switch" data-key="clearAfterSpeak"><span>Clear the text after Speak</span></label>
@@ -92,6 +101,18 @@ if ('serviceWorker' in navigator && (location.hostname !== '127.0.0.1' || locati
     <button type="button" id="test-voice">Test voice</button>
     <label class="field">Starter words<span class="hint">Names, places, pets and other words you use</span><textarea id="starters" rows="3"></textarea></label>
     <button type="button" id="add-starters" aria-label="Add starter words">Add</button>
+    <fieldset data-list="favourites"><legend>Favourite words</legend>
+      <ul class="list"></ul>
+      <label class="field">New favourite word<input type="text" id="favourite-input" maxlength="60" autocomplete="off"></label>
+      <button type="button" data-act="add" aria-label="Add favourite word">Add</button>
+      <p class="note" role="status"></p>
+    </fieldset>
+    <fieldset data-list="phrases"><legend>Quick phrases</legend>
+      <ul class="list"></ul>
+      <label class="field">New quick phrase<input type="text" id="phrase-input" autocomplete="off"></label>
+      <button type="button" data-act="add" aria-label="Add quick phrase">Add</button>
+      <p class="note" role="status"></p>
+    </fieldset>
     <button value="" class="close">Close</button>
   </form>
 </dialog>

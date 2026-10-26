@@ -5,7 +5,7 @@ import { dotLook } from '../js/pager.js';
 const words = n => Array.from({length: n}, (_, i) => `word${i}`);
 
 // Mounts a panel in a fixed-size box with the app's real styles, runs fn, then removes both.
-async function withPanel(fn, width = 600) {
+async function withPanel(fn, width = 600, options = {}) {
   const link = Object.assign(document.createElement('link'), {rel: 'stylesheet', href: '../styles.css'});
   await new Promise((resolve, reject) => { link.onload = resolve; link.onerror = reject; document.head.append(link); });
   const root = document.createElement('div');
@@ -13,7 +13,7 @@ async function withPanel(fn, width = 600) {
   document.body.append(root);
   const live = document.createElement('div');
   const picked = [];
-  const panel = createPagedPanel(root, {label: 'Favourite words', onPick: item => picked.push(item), live});
+  const panel = createPagedPanel(root, {label: 'Favourite words', onPick: item => picked.push(item), live, ...options});
   const q = sel => [...root.querySelectorAll(sel)];
   const ui = {
     panel, root, live, picked,
@@ -182,4 +182,52 @@ test('announces the page in the live region', () => withPanel(ui => {
   ui.next.click();
   eq(ui.live.textContent, 'Favourite words, page 2 of 3');
   eq(writes, ['', 'Favourite words, page 2 of 3'], 'cleared first so a repeat is announced again');
+}));
+
+const tap = el => el.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, detail: 1}));
+
+test('a quick tap picks when there is no minimum press', () => withPanel(ui => {
+  ui.panel.set(['a', 'b']);
+  pointer(first(ui), 'pointerdown', 100, 100);
+  pointer(first(ui), 'pointerup', 100, 100);
+  tap(first(ui));
+  eq(ui.picked, ['a']);
+}));
+
+test('tap safety ignores a press shorter than minPress, but never a keyboard or switch click', () => withPanel(async ui => {
+  ui.panel.set(['a', 'b']);
+  const b = first(ui);
+  pointer(b, 'pointerdown', 100, 100);
+  pointer(b, 'pointerup', 100, 100);
+  tap(b);
+  eq(ui.picked, [], 'a quick tap is ignored');
+  b.click();
+  eq(ui.picked, ['a'], 'a click with no pointer (detail 0) counts');
+  pointer(b, 'pointerdown', 100, 100);
+  await wait(320);
+  pointer(b, 'pointerup', 100, 100);
+  tap(b);
+  eq(ui.picked, ['a', 'a'], 'a press held long enough counts');
+}, 600, {minPress: () => 300}));
+
+test('a pick that redraws the list moves focus to the first item', () => {
+  let panel;
+  return withPanel(ui => {
+    panel = ui.panel;
+    panel.set(['a', 'b', 'c']);
+    const b = ui.root.querySelectorAll('.paged-grid button')[1];
+    b.focus();
+    b.click();
+    ok(document.activeElement === first(ui) && first(ui).textContent === 'x', 'focus on the first new item');
+  }, 600, {onPick: () => panel.set(['x', 'y'])});
+});
+
+test('the panel is a named group that takes focus when it has no items', () => withPanel(ui => {
+  eq([ui.root.getAttribute('role'), ui.root.getAttribute('aria-label'), ui.root.tabIndex], ['group', 'Favourite words', -1]);
+  ui.panel.set([]);
+  ui.panel.focus();
+  ok(document.activeElement === ui.root, 'focus on the panel');
+  ui.panel.set(['a']);
+  ui.panel.focus();
+  ok(document.activeElement === first(ui), 'focus on the first item');
 }));

@@ -9,8 +9,9 @@ const button = (text, aria) => {
   return b;
 };
 
-export function createPagedPanel(root, {label, onPick, live}) {
-  let items = [], page = 0, size = 2, maxDots = 7, start = null, swipedAt = -Infinity;
+// minPress is tap safety: a pointer press shorter than it (ms) picks nothing.
+export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}) {
+  let items = [], page = 0, size = 2, maxDots = 7, start = null, swipedAt = -Infinity, pressedAt = -Infinity;
   const grid = document.createElement('div'), nav = document.createElement('div'), dots = document.createElement('div');
   // U+FE0E keeps the arrows as text, not emoji.
   const prev = button('◀︎', 'Previous'), next = button('▶︎', 'Next');
@@ -19,14 +20,26 @@ export function createPagedPanel(root, {label, onPick, live}) {
   dots.className = 'dots';
   nav.append(prev, dots, next);
   root.classList.add('paged');
+  // A named group that can take focus, for when there are no buttons to land on.
+  root.setAttribute('role', 'group');
+  root.setAttribute('aria-label', label);
+  root.tabIndex = -1;
   root.replaceChildren(grid, nav);
+  const focusFirst = () => (grid.firstElementChild || root).focus();
 
   function render() {
     const count = pageCount(items.length, size);
     const focused = document.activeElement, inNav = nav.contains(focused);
     grid.replaceChildren(...pageSlice(items, page, size).map(item => {
       const b = button(item);
-      b.onclick = () => onPick(item);
+      b.onclick = e => {
+        // detail 0 means a keyboard, switch or screen reader activated it, so tap safety doesn't apply.
+        if (e.detail && e.timeStamp - pressedAt < minPress()) return;
+        const was = document.activeElement;
+        onPick(item);
+        // A pick that redraws the list (new suggestions) mustn't drop keyboard and switch users at the top of the page.
+        if (!was.isConnected) focusFirst();
+      };
       return b;
     }));
     nav.hidden = count === 1;
@@ -44,7 +57,8 @@ export function createPagedPanel(root, {label, onPick, live}) {
     }));
     // Keyboard and switch users keep their place when the control they used is redrawn, disabled or hidden.
     if (inNav && (nav.hidden || focused.disabled || !focused.isConnected)) {
-      (nav.hidden ? grid.firstElementChild || root : dots.querySelector('[aria-current]')).focus();
+      if (nav.hidden) focusFirst();
+      else dots.querySelector('[aria-current]').focus();
     }
   }
 
@@ -79,6 +93,7 @@ export function createPagedPanel(root, {label, onPick, live}) {
   root.addEventListener('pointerdown', e => {
     if (!e.isPrimary) return;
     start = e;
+    pressedAt = e.timeStamp;
     swipedAt = -Infinity;
   });
   root.addEventListener('pointercancel', () => { start = null; });
@@ -106,6 +121,7 @@ export function createPagedPanel(root, {label, onPick, live}) {
       refresh();
     },
     refresh,
+    focus: focusFirst,
     get page() { return page; },
   };
 }
