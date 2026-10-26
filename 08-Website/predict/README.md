@@ -39,13 +39,13 @@ Try these on a real phone before handing it over.
 - [ ] iPhone: the app opens, looks right and works.
 - [ ] Suggestions appear instantly as you type, with no lag on either phone.
 - [ ] Install it to the home screen, then switch on airplane mode and open it. It loads and suggests words.
-- [ ] Real touch taps on suggestions, actions and quick phrases keep the phone keyboard open.
+- [ ] On the Keyboard tab, real touch taps on the suggestion strip and on Speak, Undo and Clear keep the phone keyboard open.
 - [ ] The phone keyboard's composing text isn't duplicated when a suggestion is chosen.
 - [ ] Focus returns to the text box after the long-press menu closes.
 - [ ] Speak, Hear it, and "Say each word when I pick it" all actually speak, in the chosen voice and speed.
 - [ ] At Huge text size and with the Hyperlegible font, the text underline lines up with the words, including on wrapped lines.
-- [ ] Buttons stay at least 48 px tall when the actions row wraps at Huge text size.
-- [ ] Switching tabs closes and reopens the phone keyboard correctly.
+- [ ] Buttons stay at least 48 px and readable at Huge text size, including the tabs.
+- [ ] Switching to Suggested, Favourite words or Quick phrases closes the phone keyboard; switching back to Keyboard reopens it at the same place.
 - [ ] Swiping sideways pages the word and phrase lists on a real phone, and never picks the word the swipe started on.
 - [ ] Stop cancels speech on Android and on iPhone.
 - [ ] The page dots are visible in all three themes (light, dark and high contrast).
