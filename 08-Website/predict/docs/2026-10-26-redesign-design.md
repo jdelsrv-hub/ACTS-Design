@@ -80,7 +80,7 @@ The old top quick-phrase row and the old bottom action row (Copy, Recent, Learne
 ## 5. Paging (Suggested, Favourite words, Quick phrases)
 
 - **Layout:** two columns of large buttons. Labels wrap and are never cut off.
-- **How many fit:** each collection's page size is however many rows fit the panel's height at the current text size, times 2. It's recalculated when the window resizes, text size changes or the phone rotates. There's always at least 2 per page.
+- **How many fit:** pages are filled from the items' real heights at the current width and text size, so each page holds as many as fit with nothing hidden. A long phrase just means that page holds fewer. Quick phrases use one full-width column so phrases wrap less; Suggested and Favourites use two columns. Pages are recalculated when the window resizes, text size changes or the phone rotates.
 - **Independent pages:** each collection remembers its own page while the app is open.
   - After a delete or a resize, the page is clamped so it's never past the last page.
   - Suggested resets to page 1 on new results.
