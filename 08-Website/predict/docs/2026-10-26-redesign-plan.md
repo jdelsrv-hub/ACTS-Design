@@ -27,7 +27,7 @@
 
 1. **A word or phrase chosen after switching tabs** goes in exactly at the remembered cursor, or replaces the remembered selection. That includes the middle of a word or sentence, with correct spacing. Tests in Task 1 (`insertPhrase`) and Task 5 (browser check).
 2. **Removing the last item on the last page** never leaves a blank page. Test in Task 1 (`clampPage`) and Task 6.
-3. **Huge text or a short screen** still shows at least 2 items per page, and every item stays reachable. Test in Task 1 (`perPage`).
+3. **Huge text or a short screen** still shows at least one row per page, and every item stays reachable. Test in Task 1 (`packPages`).
 4. **A swipe that starts on a word button** changes the page and never inserts the word. Test in Task 4 (synthetic pointer events).
 5. **A backup made before favourites existed** still restores. Test in Task 2.
 

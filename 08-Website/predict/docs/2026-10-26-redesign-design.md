@@ -154,15 +154,16 @@ All existing settings stay and still apply instantly. Additions:
 ## 11. Code structure
 
 - **New `js/pager.js`:** pure paging logic, with no DOM.
-  - `pageCount(n, perPage)`
-  - `clampPage(page, n, perPage)`
-  - `pageSlice(items, page, perPage)`
+  - `packPages(heights, available, columns, gap)`
+  - `clampPage(page, count)`
+  - `pageSlice(items, starts, page)`
   - `dotWindow(page, count, max = 7)`
+  - `dotLook(distance)`
   - All unit-tested.
 - **`js/memory.js` and `js/backup.js`:** favourites, `movePin`, and validation, with unit tests.
 - **`js/speech.js`:** reports when speaking starts and ends (callbacks), so Speak can switch to Stop and back. It gets a `stop()` export.
 - **`js/app.js`, `index.html` and `styles.css`:** the new layout, tabs, panels, More menu and settings sections.
-- **`sw.js`:** the cache name goes to `predict-v3`, and `js/pager.js` is added to the precache list.
+- **`sw.js`:** the cache name goes to `predict-v3`, and `js/pager.js` and `js/panels.js` are added to the precache list.
 
 ## 12. Error handling
 

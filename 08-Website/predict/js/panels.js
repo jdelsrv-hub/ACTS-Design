@@ -65,6 +65,7 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0,
       else dots.querySelector('[aria-current]').focus();
     }
     more.hidden = true;
+    root.classList.remove('overflowing'); // its border would shrink the grid and keep the cue stuck
     const over = grid.scrollHeight > grid.clientHeight + 1;
     more.hidden = !over;
     root.classList.toggle('overflowing', over);
@@ -86,10 +87,11 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0,
   function refresh() {
     nav.hidden = false;
     more.hidden = true;
+    root.classList.remove('overflowing');
     root.style.minHeight = '';
     maxDots = Math.max(3, Math.min(7, Math.floor(dots.clientWidth / 48)));
     grid.replaceChildren(...items.map(item => button(item)));
-    const heights = [...grid.children].map(b => b.offsetHeight);
+    const heights = [...grid.children].map(b => Math.ceil(b.getBoundingClientRect().height)); // offsetHeight rounds down, which could clip the last item
     const gap = parseFloat(getComputedStyle(grid).rowGap) || 0, tallest = Math.max(0, ...heights);
     // The panel never shrinks below the tallest item and the nav; the page scrolls instead. 0 means it's hidden.
     if (tallest) root.style.minHeight = `${tallest + gap + nav.offsetHeight}px`;

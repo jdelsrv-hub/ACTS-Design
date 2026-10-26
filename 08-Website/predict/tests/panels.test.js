@@ -265,6 +265,19 @@ test('a more-below cue shows when the grid is forced to overflow, and goes when 
   ok(cue.hidden && !ui.root.classList.contains('overflowing'), 'cue gone');
 }, 300));
 
+test('the more-below cue cannot stick: its own border is not counted when measuring', () => withPanel(ui => {
+  const grid = ui.root.querySelector('.paged-grid'), cue = ui.root.querySelector('.more');
+  ui.panel.set(['a']);
+  const exact = grid.firstElementChild.offsetHeight; // one row, so this is the content height
+  grid.style.boxSizing = 'border-box'; // so the 6 px border takes room from the content
+  grid.style.maxHeight = '30px';
+  ui.panel.refresh();
+  ok(!cue.hidden && ui.root.classList.contains('overflowing'), 'cue shown while forced to overflow');
+  grid.style.maxHeight = `${exact}px`; // fits exactly, but only while the cue's 6 px border is off
+  ui.panel.refresh();
+  ok(cue.hidden && !ui.root.classList.contains('overflowing'), 'cue gone when it fits');
+}, 300));
+
 test('with a minimum press, an item shows it is armed once held that long', () => withPanel(async ui => {
   ui.panel.set(['a', 'b']);
   const b = first(ui);

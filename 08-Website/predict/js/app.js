@@ -30,6 +30,9 @@ const pagers = []; // every paged panel, re-measured whenever its space may have
 const refreshPanels = () => pagers.forEach(p => p.refresh());
 addEventListener('resize', refreshPanels);
 vv?.addEventListener('resize', refreshPanels);
+// A web font that arrives late changes every label's width, so pack the pages again.
+document.fonts?.addEventListener('loadingdone', refreshPanels);
+document.fonts?.ready.then(refreshPanels);
 
 let store = await openStore(), memory, settings, wordList, saved;
 try {
