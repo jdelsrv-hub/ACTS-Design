@@ -52,8 +52,10 @@ if ('serviceWorker' in navigator && (location.hostname !== '127.0.0.1' || locati
     <div id="favourites"></div>
   </div>
   <div role="tabpanel" id="panel-phrases" aria-labelledby="tab-phrases" hidden>
-    <p id="phrases-speak" class="status" hidden>Tapping speaks</p>
-    <button type="button" id="save-phrase">Save message as a phrase</button>
+    <div class="panel-row">
+      <p id="phrases-speak" class="status" hidden>Tapping speaks</p>
+      <button type="button" id="save-phrase">Save message as a phrase</button>
+    </div>
     <button type="button" id="add-phrases" hidden>Add a quick phrase</button>
     <div id="phrases"></div>
   </div>

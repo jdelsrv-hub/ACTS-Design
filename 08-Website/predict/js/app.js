@@ -126,8 +126,18 @@ function setText(text, cursor, undoable = true) {
   ta.setSelectionRange(cursor, cursor);
   caret = { start: cursor, end: cursor };
   if (typing()) ta.focus(); // on another tab the phone's keyboard stays closed
+  else scrollToCaret(cursor);
   lastPick = lastLearned = lastBlock = null; // a changed text is a new message, and there is no pick or fix left to judge
   update(true);
+}
+// A text box without focus doesn't scroll to its cursor, so the text up to it is measured to show what went in.
+function scrollToCaret(cursor) {
+  const text = ta.value;
+  ta.value = text.slice(0, cursor);
+  const height = ta.scrollHeight;
+  ta.value = text;
+  ta.setSelectionRange(cursor, cursor);
+  ta.scrollTop = height - ta.clientHeight;
 }
 function undo() {
   if (lastBlock) {

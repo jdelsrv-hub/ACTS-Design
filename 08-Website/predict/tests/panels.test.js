@@ -231,3 +231,47 @@ test('the panel is a named group that takes focus when it has no items', () => w
   ui.panel.focus();
   ok(document.activeElement === first(ui), 'focus on the first item');
 }));
+
+const LONG = 'a long phrase that wraps over several lines in a narrow column of buttons';
+const fits = grid => grid.scrollHeight <= grid.clientHeight + 1;
+
+test('pages are sized from the tallest item, so no item on a page is out of view', () => withPanel(ui => {
+  const list = words(20);
+  list.splice(5, 0, LONG);
+  ui.panel.set(list);
+  const grid = ui.root.querySelector('.paged-grid');
+  let pages = 0;
+  do {
+    pages++;
+    ok(ui.items().length >= 2 || ui.next.disabled, `page ${ui.panel.page} has ${ui.items().length} items`);
+    ok(fits(grid), `page ${ui.panel.page} hides ${grid.scrollHeight - grid.clientHeight} px`);
+    if (ui.next.disabled || ui.nav.hidden) break;
+    ui.next.click();
+  } while (pages < 30);
+  ok(ui.root.querySelector('.more').hidden, 'no more-below cue when everything fits');
+}, 300));
+
+test('a more-below cue shows when the grid is forced to overflow, and goes when it fits', () => withPanel(ui => {
+  const grid = ui.root.querySelector('.paged-grid'), cue = ui.root.querySelector('.more');
+  ui.panel.set(['a', LONG]);
+  ok(cue.hidden, 'hidden while it fits');
+  grid.style.maxHeight = '60px';
+  ui.panel.refresh();
+  ok(!fits(grid), 'forced to overflow');
+  ok(!cue.hidden && ui.root.classList.contains('overflowing'), 'cue shown');
+  eq(cue.getAttribute('aria-hidden'), 'true');
+  grid.style.maxHeight = '';
+  ui.panel.refresh();
+  ok(cue.hidden && !ui.root.classList.contains('overflowing'), 'cue gone');
+}, 300));
+
+test('with a minimum press, an item shows it is armed once held that long', () => withPanel(async ui => {
+  ui.panel.set(['a', 'b']);
+  const b = first(ui);
+  pointer(b, 'pointerdown', 100, 100);
+  ok(!b.classList.contains('armed'), 'not armed at once');
+  await wait(80);
+  ok(b.classList.contains('armed'), 'armed after the minimum press');
+  pointer(b, 'pointerup', 100, 100);
+  ok(!b.classList.contains('armed'), 'disarmed on lifting');
+}, 600, {minPress: () => 50}));

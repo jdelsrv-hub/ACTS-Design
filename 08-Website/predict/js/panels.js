@@ -11,8 +11,11 @@ const button = (text, aria) => {
 
 // minPress is tap safety: a pointer press shorter than it (ms) picks nothing.
 export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}) {
-  let items = [], page = 0, size = 2, maxDots = 7, start = null, swipedAt = -Infinity, pressedAt = -Infinity;
+  let items = [], page = 0, size = 2, maxDots = 7, start = null, swipedAt = -Infinity, pressedAt = -Infinity, armTimer, armed = null;
   const grid = document.createElement('div'), nav = document.createElement('div'), dots = document.createElement('div');
+  // Backstop for a page that still doesn't fit; screen readers reach every item anyway, so it's hidden from them.
+  const more = Object.assign(document.createElement('p'), {className: 'more', textContent: '▼︎ more', hidden: true});
+  more.setAttribute('aria-hidden', 'true');
   // U+FE0E keeps the arrows as text, not emoji.
   const prev = button('◀︎', 'Previous'), next = button('▶︎', 'Next');
   grid.className = 'paged-grid';
@@ -24,7 +27,7 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
   root.setAttribute('role', 'group');
   root.setAttribute('aria-label', label);
   root.tabIndex = -1;
-  root.replaceChildren(grid, nav);
+  root.replaceChildren(grid, more, nav);
   const focusFirst = () => (grid.firstElementChild || root).focus();
 
   function render() {
@@ -60,6 +63,10 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
       if (nav.hidden) focusFirst();
       else dots.querySelector('[aria-current]').focus();
     }
+    more.hidden = true;
+    const over = grid.scrollHeight > grid.clientHeight + 1;
+    more.hidden = !over;
+    root.classList.toggle('overflowing', over);
   }
 
   function go(to) {
@@ -72,16 +79,20 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
     live.textContent = `${label}, page ${page + 1} of ${count}`;
   }
 
-  // Page size is however many rows at the current text size fit the grid, measured with the nav showing.
+  // Page size is however many rows fit the grid, measured with the nav showing. Every row is counted as tall as
+  // the tallest item (all of them are laid out once to find it), so no item on any page is ever out of view.
   // Only as many 48 px dots as fit beside Previous and Next, so the nav never wraps onto a second row.
   function refresh() {
     nav.hidden = false;
+    more.hidden = true;
+    root.style.minHeight = '';
     maxDots = Math.max(3, Math.min(7, Math.floor(dots.clientWidth / 48)));
-    const probe = grid.appendChild(button('Ag'));
+    grid.replaceChildren(button('Ag'), ...items.map(item => button(item)));
+    const row = Math.max(...[...grid.children].map(b => b.offsetHeight));
     const gap = parseFloat(getComputedStyle(grid).rowGap) || 0;
-    // shortcut: assumes one-line rows; a wrapped long phrase can push the last row out of view, so the grid scrolls to keep it reachable.
-    size = perPage(grid.clientHeight + gap, probe.offsetHeight + gap);
-    probe.remove();
+    // The panel never shrinks below one such row and the nav; the page scrolls instead. 0 means it's hidden.
+    if (row) root.style.minHeight = `${row + gap + nav.offsetHeight}px`;
+    size = perPage(grid.clientHeight + gap, row + gap);
     page = clampPage(page, items.length, size);
     render();
   }
@@ -90,14 +101,25 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0}
   next.onclick = () => go(page + 1);
 
   // Only the first finger swipes; a second finger, or a gesture the browser takes over (scroll, zoom), does nothing.
+  // With tap safety, an item shows when letting go will pick it, like the strip.
+  const disarm = () => {
+    clearTimeout(armTimer);
+    armed?.classList.remove('armed');
+    armed = null;
+  };
   root.addEventListener('pointerdown', e => {
     if (!e.isPrimary) return;
     start = e;
     pressedAt = e.timeStamp;
     swipedAt = -Infinity;
+    disarm();
+    const b = e.target.closest?.('.paged-grid button');
+    if (b && minPress()) armTimer = setTimeout(() => (armed = b).classList.add('armed'), minPress());
   });
-  root.addEventListener('pointercancel', () => { start = null; });
+  root.addEventListener('pointercancel', () => { start = null; disarm(); });
+  root.addEventListener('pointerleave', disarm);
   root.addEventListener('pointerup', e => {
+    disarm();
     if (!start || e.pointerId !== start.pointerId) return;
     const dx = e.clientX - start.clientX, dy = e.clientY - start.clientY;
     start = null;
