@@ -256,12 +256,12 @@ test('a more-below cue shows when the grid is forced to overflow, and goes when 
   ui.panel.set(['a', LONG]);
   ok(cue.hidden, 'hidden while it fits');
   grid.style.maxHeight = '60px';
-  ui.panel.refresh();
+  ui.panel.refresh(true); // the grid's room changed without the panel's size changing
   ok(!fits(grid), 'forced to overflow');
   ok(!cue.hidden && ui.root.classList.contains('overflowing'), 'cue shown');
   eq(cue.getAttribute('aria-hidden'), 'true');
   grid.style.maxHeight = '';
-  ui.panel.refresh();
+  ui.panel.refresh(true); // the grid's room changed without the panel's size changing
   ok(cue.hidden && !ui.root.classList.contains('overflowing'), 'cue gone');
 }, 300));
 
@@ -271,10 +271,10 @@ test('the more-below cue cannot stick: its own border is not counted when measur
   const exact = grid.firstElementChild.offsetHeight; // one row, so this is the content height
   grid.style.boxSizing = 'border-box'; // so the 6 px border takes room from the content
   grid.style.maxHeight = '30px';
-  ui.panel.refresh();
+  ui.panel.refresh(true); // the grid's room changed without the panel's size changing
   ok(!cue.hidden && ui.root.classList.contains('overflowing'), 'cue shown while forced to overflow');
   grid.style.maxHeight = `${exact}px`; // fits exactly, but only while the cue's 6 px border is off
-  ui.panel.refresh();
+  ui.panel.refresh(true); // the grid's room changed without the panel's size changing
   ok(cue.hidden && !ui.root.classList.contains('overflowing'), 'cue gone when it fits');
 }, 300));
 
@@ -304,3 +304,36 @@ test('a one-column panel stacks items, and a long item takes fewer items on its 
   }
   ok(counts[0] < counts[1], `the page with the long item holds fewer: ${counts}`);
 }, 300, {columns: 1}));
+
+test('a long press on an item is not left to the phone, so the hold still picks', () => withPanel(ui => {
+  ui.panel.set(['a', 'b']);
+  const e = new MouseEvent('contextmenu', {bubbles: true, cancelable: true});
+  first(ui).dispatchEvent(e);
+  ok(e.defaultPrevented, 'item long press prevented');
+  const n = new MouseEvent('contextmenu', {bubbles: true, cancelable: true});
+  ui.root.dispatchEvent(n);
+  ok(!n.defaultPrevented, 'the panel itself keeps its menu');
+}));
+
+test('a hidden panel keeps the items set on it and packs them when shown', () => withPanel(ui => {
+  ui.panel.set(['a', 'b']);
+  ui.root.hidden = true;
+  ui.panel.set(['x', 'y', 'z']);
+  eq(ui.items(), ['a', 'b'], 'not rebuilt while hidden');
+  ui.root.hidden = false;
+  ui.panel.refresh();
+  eq(ui.items(), ['x', 'y', 'z']);
+  ok(first(ui).offsetHeight >= 56, 'measured once shown');
+}));
+
+test('a refresh with nothing changed keeps the buttons, and a repack keeps focus on the same item', () => withPanel(ui => {
+  ui.panel.set(words(6));
+  const b = ui.root.querySelectorAll('.paged-grid button')[3];
+  b.focus();
+  ui.panel.refresh();
+  ok(ui.root.querySelectorAll('.paged-grid button')[3] === b && document.activeElement === b, 'nothing rebuilt');
+  ui.root.style.width = '500px';
+  ui.panel.refresh();
+  const now = ui.root.querySelectorAll('.paged-grid button')[3];
+  ok(now !== b && document.activeElement === now, 'rebuilt, with focus on the same item');
+}));

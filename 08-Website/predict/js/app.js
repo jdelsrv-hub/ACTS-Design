@@ -28,11 +28,12 @@ if (vv) {
 }
 const pagers = []; // every paged panel, re-measured whenever its space may have changed
 const refreshPanels = () => pagers.forEach(p => p.refresh());
+const repackPanels = () => pagers.forEach(p => p.refresh(true)); // the buttons' size changed, though the room may not have
 addEventListener('resize', refreshPanels);
 vv?.addEventListener('resize', refreshPanels);
 // A web font that arrives late changes every label's width, so pack the pages again.
-document.fonts?.addEventListener('loadingdone', refreshPanels);
-document.fonts?.ready.then(refreshPanels);
+document.fonts?.addEventListener('loadingdone', repackPanels);
+document.fonts?.ready.then(repackPanels);
 
 let store = await openStore(), memory, settings, wordList, saved;
 try {
@@ -62,7 +63,7 @@ function applySettings() {
   if (settings.font === 'hyperlegible' && !$('font')) {
     document.head.append(Object.assign(document.createElement('link'), { id: 'font', rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap' }));
   }
-  refreshPanels(); // the text size sets how many buttons fit
+  repackPanels(); // the text size sets how many buttons fit
 }
 applySettings();
 if (!store.persistent) showBanner(NO_MEMORY);

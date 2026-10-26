@@ -72,16 +72,12 @@ body:has(#panel-keyboard[hidden]) #editor { flex: none; min-height: 2.5em; }
 /* Reduced contrast is allowed for inactive controls; aria-disabled keeps them focusable and announced. */
 [aria-disabled="true"], button:disabled { opacity: 0.4; }
 
-#tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; flex: none; padding-bottom: 6px; }
-[role="tab"] { min-height: 56px; padding: 4px 0; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere;
-  /* 4vw keeps "Suggested" on one line four across, down to a 320 px wide phone. */
-  font-size: min(0.6em, 4vw); }
-/* The bigger text sizes go two across instead of shrinking the names. */
-[data-size="extra-large"] #tabs, [data-size="huge"] #tabs { grid-template-columns: 1fr 1fr; }
-[data-size="extra-large"] [role="tab"], [data-size="huge"] [role="tab"] { font-size: 0.6em; }
+/* Two across at every text size, so the names stay at the chosen size and wrap rather than shrink. */
+#tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; flex: none; padding-bottom: 6px; }
+[role="tab"] { min-height: 56px; padding: 4px; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
 /* Filled plus a thick bottom edge, so the chosen tab doesn't rely on colour alone. */
 [role="tab"][aria-selected="true"] { background: var(--best); color: var(--bg); box-shadow: 0 6px var(--fg); }
-/* High contrast fills the tab black, so a yellow gap keeps the black edge visible; 6 px clears the row below when the tabs go 2 across. */
+/* High contrast fills the tab black, so a yellow gap keeps the black edge visible; 6 px clears the second row of tabs. */
 [data-contrast="high"] [role="tab"][aria-selected="true"] { box-shadow: 0 3px var(--bg), 0 6px var(--fg); }
 /* Only the strip shows on Keyboard, so the text box keeps the height above the phone's keyboard. */
 /* No min-height: 0 here or on the panels, so a panel's own minimum (one row and its nav, set by panels.js) holds. */

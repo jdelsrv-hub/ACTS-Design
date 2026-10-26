@@ -12,6 +12,7 @@ const button = (text, aria) => {
 // minPress is tap safety: a pointer press shorter than it (ms) picks nothing.
 export function createPagedPanel(root, {label, onPick, live, minPress = () => 0, columns = 2}) {
   let items = [], page = 0, starts = [0], maxDots = 7, start = null, swipedAt = -Infinity, pressedAt = -Infinity, armTimer, armed = null;
+  let packed = null; // the items and panel size of the last pack; null when a pack is due
   const grid = document.createElement('div'), nav = document.createElement('div'), dots = document.createElement('div');
   // Backstop for a page that still doesn't fit; screen readers reach every item anyway, so it's hidden from them.
   const more = Object.assign(document.createElement('p'), {className: 'more', textContent: '▼︎ more', hidden: true});
@@ -84,7 +85,13 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0,
   // Pages are packed from every item's height at the current width and text size, measured with the nav showing,
   // so a long phrase takes room only on its own page and no item on any page is ever out of view.
   // Only as many 48 px dots as fit beside Previous and Next, so the nav never wraps onto a second row.
-  function refresh() {
+  // force repacks when the items' size may have changed (text size, font) with the panel's own size unchanged.
+  function refresh(force = false) {
+    // A hidden panel measures nothing, so it packs once shown (selecting a tab refreshes). set() has kept the items.
+    if (!root.getClientRects().length) return void (packed = null);
+    // A resize that left this panel's room alone (the other bars moving, say) needn't rebuild under a finger or focus.
+    if (!force && packed?.items === items && packed.width === root.clientWidth && packed.height === root.clientHeight) return;
+    const at = [...grid.children].indexOf(document.activeElement);
     nav.hidden = false;
     more.hidden = true;
     root.classList.remove('overflowing');
@@ -98,6 +105,8 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0,
     starts = packPages(heights, grid.clientHeight, columns, gap);
     page = clampPage(page, starts.length);
     render();
+    if (at >= 0) (grid.children[Math.min(at, grid.childElementCount - 1)] ?? root).focus();
+    packed = {items, width: root.clientWidth, height: root.clientHeight};
   }
 
   prev.onclick = () => go(page - 1);
@@ -120,6 +129,8 @@ export function createPagedPanel(root, {label, onPick, live, minPress = () => 0,
     if (b && minPress()) armTimer = setTimeout(() => (armed = b).classList.add('armed'), minPress());
   });
   root.addEventListener('pointercancel', () => { start = null; disarm(); });
+  // The phone's own long press (about 450 ms) would swallow the click, so a hold with tap safety on could never pick.
+  root.addEventListener('contextmenu', e => { if (e.target.closest?.('.paged-grid button')) e.preventDefault(); });
   root.addEventListener('pointerleave', disarm);
   root.addEventListener('pointerup', e => {
     disarm();
