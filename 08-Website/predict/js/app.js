@@ -101,15 +101,21 @@ function hideToast() {
   toastPin = null;
   toastBox.replaceChildren();
 }
-function toast(message, ms = 2000, pin) {
+// pin offers to pin that phrase; undo is called by an Undo button.
+function toast(message, ms = 2000, pin, undo) {
   clearTimeout(toastTimer);
   const nodes = [message];
-  toastPin = pin;
-  if (pin) {
-    const b = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Pin it' });
-    b.addEventListener('click', () => { memory.pinPhrase(pin); saveMemory(); renderPhrases(); toast(`Pinned "${pin}"`); });
+  const button = (textContent, run) => {
+    const b = Object.assign(document.createElement('button'), { type: 'button', textContent });
+    b.addEventListener('click', run);
     nodes.push(b);
-  }
+  };
+  toastPin = pin;
+  if (pin) button('Pin it', () => { memory.pinPhrase(pin); saveMemory(); renderPhrases(); toast(`Pinned "${pin}"`); });
+  if (undo) button('Undo', () => { hideToast(); undo(); });
+  // An open modal dialog makes everything outside it inert, Undo and Pin it included, so the toast goes inside it.
+  const host = [...document.querySelectorAll('dialog:modal')].at(-1) ?? document.body;
+  if (toastBox.parentNode !== host) host.append(toastBox);
   toastBox.replaceChildren(...nodes);
   toastBox.hidePopover?.(); // hide then show moves it above any dialog opened since
   toastBox.showPopover?.();
@@ -223,7 +229,7 @@ renderFavourites();
 renderPhrases();
 $('save-phrase').addEventListener('click', () => {
   const text = ta.value.trim();
-  if (!text) return;
+  if (!text) return toast('Write a phrase first, then save it.');
   memory.pinPhrase(text);
   saveMemory();
   renderPhrases();
@@ -563,9 +569,9 @@ const act = (textContent, ariaLabel, name, id) => {
 // Favourite words and Quick phrases in Settings share one list editor. memory is read at call time, as Restore replaces it.
 const lists = {
   favourites: { noun: 'word', items: () => memory.favourites(), name: w => w, render: () => renderFavourites(),
-    add: w => memory.addFavourite(w), rename: (i, w) => memory.renameFavourite(i, w), remove: i => memory.removeFavourite(i), move: (i, d) => memory.moveFavourite(i, d) },
+    add: (w, i) => memory.addFavourite(w, i), rename: (i, w) => memory.renameFavourite(i, w), remove: i => memory.removeFavourite(i), move: (i, d) => memory.moveFavourite(i, d) },
   phrases: { noun: 'phrase', items: () => memory.pinned(), name: p => `"${p}"`, render: () => renderPhrases(),
-    add: p => !memory.pinned().includes(p) && (memory.pinPhrase(p), true), rename: (i, p) => memory.renamePin(i, p),
+    add: (p, i) => !memory.pinned().includes(p) && (memory.pinPhrase(p, i), true), rename: (i, p) => memory.renamePin(i, p),
     remove: i => memory.unpinPhrase(memory.pinned()[i]), move: (i, d) => memory.movePin(i, d) },
 };
 const listOf = box => lists[box.dataset.list];
@@ -605,6 +611,7 @@ function startRename(box, i) {
 
 const refusal = (kind, text) => text ? `That ${kind.noun} is already there` : `Type a ${kind.noun} first`;
 
+let removedAt = -Infinity;
 settingsBox.addEventListener('click', e => {
   const b = e.target.closest('[data-list] [data-act]');
   if (!b) return;
@@ -615,8 +622,13 @@ settingsBox.addEventListener('click', e => {
     input.value = note.textContent = '';
     listChanged(box);
   } else if (name === 'remove') {
+    // Focus lands on the next Remove, so a tremor's double tap mustn't take that one too.
+    if (e.timeStamp - removedAt < 500) return;
+    removedAt = e.timeStamp;
+    const text = kind.items()[i];
     kind.remove(i);
     listChanged(box);
+    toast(`Removed “${text}”`, 6000, null, () => { if (kind.add(text, i)) listChanged(box); });
     // Focus stays in the list: the next row's Remove, else the one before, else the add box.
     (rowButton(box, i, 'remove') ?? rowButton(box, i - 1, 'remove') ?? box.querySelector('label input')).focus();
   } else if (name === 'up' || name === 'down') {
@@ -717,7 +729,7 @@ $('restore-file').addEventListener('change', async e => {
   if (!file) return;
   const backup = readBackup(await file.text().catch(() => ''));
   if (!backup) return toast("That file isn't a backup from this app. Nothing was changed.", 6000);
-  if (!await ask('Replace everything it has learned with this backup?', 'Replace')) return;
+  if (!await ask('Replace everything it has learned, your favourite words and quick phrases with this backup?', 'Replace')) return;
   memory = createMemory(backup.memory);
   settings = withDefaults(backup.settings);
   memory.paused = settings.paused;
@@ -727,8 +739,8 @@ $('restore-file').addEventListener('change', async e => {
   if (await relearn()) toast('Restored');
 });
 $('start-fresh').addEventListener('click', async () => {
-  if (!await ask('Delete everything it has learned? Your settings stay.', 'Delete')) return;
+  if (!await ask('Delete everything it has learned? Your settings, favourite words and quick phrases stay.', 'Delete')) return;
   memory.clearLearned();
-  STARTER_PHRASES.forEach(p => memory.pinPhrase(p)); // "I need help" is a safety aid
+  if (!memory.pinned().length) STARTER_PHRASES.forEach(p => memory.pinPhrase(p)); // "I need help" is a safety aid
   if (await relearn()) toast('Started fresh');
 });

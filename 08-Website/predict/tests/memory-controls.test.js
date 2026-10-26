@@ -40,10 +40,12 @@ test('phrases and words lists', () => {
   eq(m.phrases(), [{text: 'hi Maria', count: 2, pinned: true}]);
   eq(m.words().find(w => w.key === 'maria'), {key: 'maria', display: 'Maria', count: 2});
 });
-test('clearLearned empties everything but paused and blocked words', () => {
-  const m = createMemory(); m.commit('see you soon', T); m.recordSlip('teh', 'the'); m.penalize('see', 'you'); m.block('darn'); m.pinPhrase('see you soon'); m.paused = true;
+test('clearLearned empties everything but paused, blocked words and quick phrases', () => {
+  const m = createMemory(); m.commit('see you soon', T); m.commit('bye now', T); m.recordSlip('teh', 'the'); m.penalize('see', 'you'); m.block('darn'); m.pinPhrase('see you soon'); m.pinPhrase('I need help'); m.paused = true;
   m.clearLearned();
-  eq(m.words(), []); eq(m.phrases(), []); eq(m.pinned(), []); eq(m.recent(), []); eq(m.slipsFor('teh'), []); ok(m.isBlocked('darn'));
+  eq(m.words(), []); eq(m.pinned(), ['see you soon', 'I need help']); eq(m.recent(), []); eq(m.slipsFor('teh'), []); ok(m.isBlocked('darn'));
+  eq(m.phrases(), [{text: 'see you soon', count: 0, pinned: true}, {text: 'I need help', count: 0, pinned: true}]);
+  eq(createMemory(JSON.parse(JSON.stringify(m.toJSON()))).pinned(), ['see you soon', 'I need help'], 'pins survive a reload');
   eq(m.committedWords, 0); eq(m.followers(['see'], 5), []); ok(m.paused);
   eq(Object.keys(m.toJSON().penalties), []);
 });
@@ -65,3 +67,8 @@ test('movePin does nothing at the ends; renamePin keeps the old phrase and refus
 });
 test('favourites are cleaned on load', () => { eq(createMemory({...createMemory().toJSON(), favourites: ['', ' tea ', 'Tea', 'x'.repeat(61), 'coffee']}).favourites(), ['tea', 'coffee']); });
 test('bad indexes change nothing', () => { const m = createMemory(); ['a', 'b'].forEach(w => { m.addFavourite(w); m.pinPhrase(w); }); m.moveFavourite(0.5, 1); m.movePin('1', -1); ok(!m.renameFavourite(1.5, 'z')); ok(!m.renamePin(NaN, 'z')); eq(m.favourites(), ['a', 'b']); eq(m.pinned(), ['a', 'b']); });
+test('a removed favourite or quick phrase goes back at its old place', () => {
+  const m = createMemory(); ['a', 'b', 'c'].forEach(w => m.addFavourite(w)); m.removeFavourite(1); ok(m.addFavourite('b', 1)); eq(m.favourites(), ['a', 'b', 'c']);
+  ['x', 'y', 'z'].forEach(p => m.pinPhrase(p)); m.unpinPhrase('x'); m.pinPhrase('x', 0); eq(m.pinned(), ['x', 'y', 'z']);
+  m.pinPhrase('y', 2); eq(m.pinned(), ['x', 'y', 'z'], 'a pinned phrase is not moved');
+});

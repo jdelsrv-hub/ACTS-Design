@@ -168,9 +168,10 @@ export function createMemory(snapshot) {
       s.recent = s.recent.filter(r => r !== text);
     },
 
-    pinPhrase(text) {
+    // index puts it back where it was, for Undo after a Remove.
+    pinPhrase(text, index = s.pins.length) {
       s.phrases[text] ??= { count: 0, lastUsed: Date.now(), offered: false };
-      if (!s.pins.includes(text)) s.pins.push(text);
+      if (!s.pins.includes(text)) s.pins.splice(index, 0, text);
     },
     unpinPhrase(text) {
       s.pins = s.pins.filter(p => p !== text);
@@ -187,10 +188,10 @@ export function createMemory(snapshot) {
 
     // Favourites are a list the person keeps, not learning, so pause and Start fresh leave them alone.
     favourites: () => [...s.favourites],
-    addFavourite(word) {
+    addFavourite(word, index = s.favourites.length) {
       const w = word.trim();
       if (!favouriteOk(w)) return false;
-      s.favourites.push(w);
+      s.favourites.splice(index, 0, w);
       return true;
     },
     renameFavourite(index, word) {
@@ -207,11 +208,11 @@ export function createMemory(snapshot) {
     phrases: () => Object.entries(s.phrases).map(([text, e]) => ({ text, count: e.count, pinned: s.pins.includes(text) })).sort((x, y) => y.count - x.count),
     words: () => Object.entries(s.words).map(([key, e]) => ({ key, display: e.display ?? key, count: e.count })).sort((x, y) => y.count - x.count),
 
-    clearLearned() {
-      // Blocked words stay: they are the person's choice, not something it learned.
+    clearLearned(now = Date.now()) {
+      // Blocked words and quick phrases stay: they are the person's choice, not something it learned.
       for (const t of ['words', 'ngrams', 'phrases', 'slips', 'penalties']) s[t] = table();
+      for (const p of s.pins) s.phrases[p] = { count: 0, lastUsed: now, offered: false };
       s.recent = [];
-      s.pins = [];
       s.committedWords = 0;
       totalCache = null;
       reindex();
