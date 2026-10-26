@@ -48,6 +48,9 @@ Try these on a real phone before handing it over.
 - [ ] Switching to Suggested, Favourite words or Quick phrases closes the phone keyboard; switching back to Keyboard reopens it at the same place.
 - [ ] Swiping sideways pages the word and phrase lists on a real phone, and never picks the word the swipe started on.
 - [ ] Stop cancels speech on Android and on iPhone.
+- [ ] With tap safety on, holding a quick phrase for about a second still picks it, on Android and iPhone.
+- [ ] From a fresh open, "I need help" is spoken in 3 taps (Quick phrases, I need help, Speak), or 2 with "Quick phrases speak when tapped" on, with tap safety on and off.
+- [ ] Speak after a word was read out speaks the whole message (doesn't just stop).
 - [ ] The page dots are visible in all three themes (light, dark and high contrast).
 - [ ] Backup downloads a file, and Restore works from that file.
 - [ ] VoiceOver (iPhone) reads every control sensibly and can use the whole app.

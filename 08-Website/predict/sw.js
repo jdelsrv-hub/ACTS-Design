@@ -1,5 +1,5 @@
 // Bump CACHE on every release so phones drop the old files.
-const CACHE = 'predict-v3';
+const CACHE = 'predict-v4';
 // No 'index.html': the host redirects it to './', and a redirect can't be cached for a page load.
 const SHELL = [
   './', 'styles.css', 'manifest.webmanifest',
@@ -13,9 +13,19 @@ const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 // cache: 'reload' skips the browser's HTTP cache, so a new release never precaches old files.
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())));
 
-self.addEventListener('activate', e => e.waitUntil(
-  caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
-));
+// The font is cached only when first used, not in SHELL, so it moves to the new cache, or an offline open would lose it.
+self.addEventListener('activate', e => e.waitUntil((async () => {
+  const keep = await caches.open(CACHE);
+  for (const key of await caches.keys()) {
+    if (key === CACHE) continue;
+    const old = await caches.open(key);
+    for (const request of await old.keys()) {
+      if (FONT_HOSTS.includes(new URL(request.url).hostname)) await keep.put(request, await old.match(request));
+    }
+    await caches.delete(key);
+  }
+  await self.clients.claim();
+})()));
 
 self.addEventListener('fetch', e => {
   const { request } = e;
