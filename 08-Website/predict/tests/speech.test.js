@@ -1,5 +1,5 @@
 import { test, eq, ok } from './harness.js';
-import { speak, listVoices, onSpeaking, stop } from '../js/speech.js';
+import { speak, listVoices, onSpeaking, stop, resync } from '../js/speech.js';
 
 // Swaps in a fake speechSynthesis, utterance and timers while fn runs, so nothing really speaks or waits.
 // fn gets the fake synth, the pending timers ({fn, ms} by id) and a flush that runs them all.
@@ -22,6 +22,7 @@ async function fake(voices, fn) {
 }
 const fire = (u, type, error) => u.dispatchEvent(Object.assign(new Event(type), { error }));
 const settings = { voiceURI: null, rate: 1 };
+const msg = { message: true }; // only a message turns Speak into Stop
 
 test('speak returns false only without speech support', async () => {
   ok(!await fake(undefined, () => speak('hi', settings)));
@@ -88,7 +89,7 @@ const watch = synth => { stop(); synth.calls.length = 0; const seen = []; onSpea
 test('start then end reports true then false', async () => {
   await fake([], synth => {
     const seen = watch(synth);
-    speak('hi', settings); fire(synth.calls[1], 'start'); eq(seen, [true]);
+    speak('hi', settings, undefined, undefined, msg); fire(synth.calls[1], 'start'); eq(seen, [true]);
     fire(synth.calls[1], 'end'); fire(synth.calls[1], 'end'); eq(seen, [true, false]);
   });
 });
@@ -96,7 +97,7 @@ test('stop reports false and no failure', async () => {
   await fake([], (synth, timers) => {
     const seen = watch(synth);
     let fails = 0;
-    speak('hi', settings, () => fails++); fire(synth.calls[1], 'start');
+    speak('hi', settings, () => fails++, undefined, msg); fire(synth.calls[1], 'start');
     stop(); eq([synth.calls.at(-1), seen, timers.size], ['cancel', [true, false], 0]);
     fire(synth.calls[1], 'error', 'interrupted'); eq([fails, seen], [0, [true, false]]);
     stop(); eq(seen, [true, false]);
@@ -105,16 +106,57 @@ test('stop reports false and no failure', async () => {
 test('a second speak while speaking reports false for the first only once, then true for the second', async () => {
   await fake([], synth => {
     const seen = watch(synth);
-    speak('one', settings); fire(synth.calls[1], 'start');
-    speak('two', settings); fire(synth.calls[1], 'error', 'interrupted'); fire(synth.calls[1], 'end');
+    speak('one', settings, undefined, undefined, msg); fire(synth.calls[1], 'start');
+    speak('two', settings, undefined, undefined, msg); fire(synth.calls[1], 'error', 'interrupted'); fire(synth.calls[1], 'end');
     fire(synth.calls[3], 'start'); eq(seen, [true, false, true]);
   });
 });
 test('no start within 2 s reports false once, and a late start reports true then false', async () => {
   await fake([], (synth, timers, flush) => {
     const seen = watch(synth);
-    speak('hi', settings); flush(); fire(synth.calls[1], 'error', 'synthesis-failed'); eq(seen, [false]);
+    speak('hi', settings, undefined, undefined, msg); flush(); fire(synth.calls[1], 'error', 'synthesis-failed'); eq(seen, [false]);
     fire(synth.calls[1], 'start'); fire(synth.calls[1], 'end'); eq(seen, [false, true, false]);
+  });
+});
+test('a word echo, Hear it or Test voice never reports speaking, so Speak stays Speak', async () => {
+  await fake([], (synth, timers, flush) => {
+    const seen = watch(synth);
+    speak('word', settings); fire(synth.calls[1], 'start'); fire(synth.calls[1], 'end');
+    speak('late', settings); flush(); fire(synth.calls[3], 'error', 'synthesis-failed');
+    eq(seen, []);
+  });
+});
+test('a message spoken during a word echo cancels the echo and reports speaking', async () => {
+  await fake([], synth => {
+    const seen = watch(synth);
+    speak('word', settings); fire(synth.calls[1], 'start');
+    speak('the message', settings, undefined, undefined, msg);
+    eq([synth.calls[2], synth.calls[3].text], ['cancel', 'the message']);
+    fire(synth.calls[1], 'error', 'interrupted'); fire(synth.calls[3], 'start'); eq(seen, [true]);
+  });
+});
+test('a word spoken over a message reports the message stopped', async () => {
+  await fake([], synth => {
+    const seen = watch(synth);
+    speak('the message', settings, undefined, undefined, msg); fire(synth.calls[1], 'start');
+    speak('word', settings); fire(synth.calls[3], 'start'); eq(seen, [true, false]);
+  });
+});
+test('resync reports a message stopped when the phone is silent, so Stop never sticks', async () => {
+  await fake([], synth => {
+    const seen = watch(synth);
+    speak('hi', settings, undefined, undefined, msg); fire(synth.calls[1], 'start');
+    Object.assign(synth, { speaking: true, pending: false }); resync(); eq(seen, [true], 'still speaking');
+    Object.assign(synth, { speaking: false, pending: true }); resync(); eq(seen, [true], 'still queued');
+    Object.assign(synth, { speaking: false, pending: false }); resync(); eq(seen, [true, false], 'end was lost');
+    fire(synth.calls[1], 'end'); resync(); eq(seen, [true, false]);
+  });
+});
+test('resync does not cut short the 2 s wait of an utterance not yet started', async () => {
+  await fake([], (synth, timers, flush) => {
+    const seen = watch(synth);
+    let fails = 0;
+    speak('hi', settings, () => fails++, undefined, msg); resync(); flush(); eq([fails, seen], [1, [false]]);
   });
 });
 test('listVoices gives up after 1 s when no voices ever load', async () => {

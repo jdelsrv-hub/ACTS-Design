@@ -7,7 +7,7 @@ import { gatherCandidates, rank } from './mixer.js';
 import { openStore } from './storage.js';
 import { withDefaults } from './settings.js';
 import { makeBackup, readBackup } from './backup.js';
-import { speak, listVoices, onSpeaking, stop } from './speech.js';
+import { speak, listVoices, onSpeaking, stop, resync } from './speech.js';
 import { createPagedPanel } from './panels.js';
 
 const NO_MEMORY = "Can't remember things right now. Make a backup in What it has learned.";
@@ -178,8 +178,9 @@ function speechStarted() {
   if (toastPin) toast(`You say "${toastPin}" a lot.`, 6000, toastPin);
   else hideToast();
 }
-function say(text) {
-  if (!speak(text, settings, noSpeech, speechStarted)) noSpeech();
+// A message (a quick phrase that speaks when tapped) turns Speak into Stop; a word, Hear it or Test voice doesn't.
+function say(text, message = false) {
+  if (!speak(text, settings, noSpeech, speechStarted, { message })) noSpeech();
 }
 
 // The empty-state button stands in for an empty list.
@@ -216,7 +217,7 @@ function insert(phrase) {
 }
 const favourites = createPagedPanel($('favourites'), { label: 'Favourite words', live, minPress, onPick: insert });
 // One column: phrases are long, and two narrow columns wrap them over many lines.
-const phrases = createPagedPanel($('phrases'), { label: 'Quick phrases', live, minPress, columns: 1, onPick: p => settings.phraseSpeaks ? say(p) : insert(p) });
+const phrases = createPagedPanel($('phrases'), { label: 'Quick phrases', live, minPress, columns: 1, onPick: p => settings.phraseSpeaks ? say(p, true) : insert(p) });
 pagers.push(suggested, favourites, phrases);
 renderFavourites();
 renderPhrases();
@@ -247,13 +248,15 @@ function refreshActions() {
   speakBtn.ariaDisabled = String(!speaking && !ta.value.trim());
   undoBtn.ariaDisabled = String(!lastBlock && !undoStack.some(s => s.text !== ta.value));
 }
-// Every speech path (Speak, Hear it, each word, quick phrases, Test voice) turns Speak into Stop.
+// Speaking a message (Speak, or a quick phrase that speaks when tapped) turns Speak into Stop.
 onSpeaking(on => {
   speaking = on;
   speakBtn.firstElementChild.textContent = on ? '⏹︎' : '🔊';
   speakBtn.lastElementChild.textContent = on ? 'Stop' : 'Speak';
   refreshActions();
 });
+// The phone may have finished, or dropped, the speech while the app was in the background.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) resync(); });
 
 function update(force) {
   refreshActions();
@@ -447,10 +450,11 @@ $('predictions-on').addEventListener('click', () => {
 let spokeAt = -Infinity;
 speakBtn.addEventListener('click', e => {
   if (e.timeStamp - spokeAt < 500) return; // a tremor's double tap mustn't stop the message it just started
+  if (speaking) resync(); // a lost end event mustn't leave Speak stuck on Stop
   if (speaking) return stop();
   const text = ta.value;
   if (!text.trim()) return;
-  const spoke = speak(text, settings, noSpeech, speechStarted);
+  const spoke = speak(text, settings, noSpeech, speechStarted, { message: true });
   if (spoke) spokeAt = e.timeStamp;
   learn(text, spoke ? '' : NO_SPEECH, 6000);
   if (settings.clearAfterSpeak) setText('', 0);
