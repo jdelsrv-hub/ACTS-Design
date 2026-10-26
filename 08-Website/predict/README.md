@@ -2,6 +2,8 @@
 
 A text-prediction web app for one person who has motor, spelling and vision difficulties and uses a touchscreen phone. It suggests words as they type, fixes likely typos, learns the words and phrases they use, and speaks the finished message aloud. Everything it learns stays on the phone, and it works offline once installed. It is plain HTML and ES modules, with no build step.
 
+The screen has the text box at the top with Speak, Undo and Clear under it, then four tabs: Keyboard, Suggested words, Favourite words and Quick phrases. Words and phrases are in big buttons in pages, with Previous, Next and page dots underneath, and a sideways swipe changes page. The phone keyboard only shows on the Keyboard tab. Copy, Recent and "What it has learned" are in the More menu, and Settings is the cog.
+
 ## Running it locally
 
 ```
@@ -43,6 +45,10 @@ Try these on a real phone before handing it over.
 - [ ] Speak, Hear it, and "Say each word when I pick it" all actually speak, in the chosen voice and speed.
 - [ ] At Huge text size and with the Hyperlegible font, the text underline lines up with the words, including on wrapped lines.
 - [ ] Buttons stay at least 48 px tall when the actions row wraps at Huge text size.
+- [ ] Switching tabs closes and reopens the phone keyboard correctly.
+- [ ] Swiping sideways pages the word and phrase lists on a real phone, and never picks the word the swipe started on.
+- [ ] Stop cancels speech on Android and on iPhone.
+- [ ] The page dots are visible in all three themes (light, dark and high contrast).
 - [ ] Backup downloads a file, and Restore works from that file.
 - [ ] VoiceOver (iPhone) reads every control sensibly and can use the whole app.
 - [ ] TalkBack (Android) reads every control sensibly and can use the whole app.
