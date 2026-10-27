@@ -9,6 +9,7 @@ import { withDefaults } from './settings.js';
 import { makeBackup, readBackup } from './backup.js';
 import { speak, listVoices, onSpeaking, stop, resync } from './speech.js';
 import { createPagedPanel } from './panels.js';
+import { createToastBox } from './toast.js';
 
 const NO_MEMORY = "Can't remember things right now. Make a backup in What it has learned.";
 const NO_SPEECH = "Your phone's text-to-speech is off. Turn it on in your phone's accessibility settings.";
@@ -94,13 +95,13 @@ const undoStack = [];   // {text, cursor}, newest last, max 50
 let caret = { start: 0, end: 0 }; // where a word from another tab goes, kept while the text box is blurred
 const typing = () => !$('panel-keyboard').hidden;
 let lastBlock = null;  // the word just blocked, while blocking it is still the last thing done, so Undo can allow it again
-const toastBox = $('toast');
+const toastBox = $('toast'), toastHost = createToastBox(toastBox);
 let toastTimer, toastPin = null;
 
 function hideToast() {
   clearTimeout(toastTimer);
   toastPin = null;
-  toastBox.replaceChildren();
+  toastHost.hide();
 }
 // pin offers to pin that phrase; undo is called by an Undo button.
 function toast(message, ms = 2000, pin, undo) {
@@ -114,12 +115,7 @@ function toast(message, ms = 2000, pin, undo) {
   toastPin = pin;
   if (pin) button('Pin it', () => { memory.pinPhrase(pin); saveMemory(); renderPhrases(); toast(`Pinned "${pin}"`); });
   if (undo) button('Undo', () => { hideToast(); undo(); });
-  // An open modal dialog makes everything outside it inert, Undo and Pin it included, so the toast goes inside it.
-  const host = [...document.querySelectorAll('dialog:modal')].at(-1) ?? document.body;
-  if (toastBox.parentNode !== host) host.append(toastBox);
-  toastBox.replaceChildren(...nodes);
-  toastBox.hidePopover?.(); // hide then show moves it above any dialog opened since
-  toastBox.showPopover?.();
+  toastHost.show(nodes);
   toastTimer = setTimeout(hideToast, ms);
 }
 toastBox.addEventListener('click', e => { if (!e.target.closest('button')) hideToast(); });
