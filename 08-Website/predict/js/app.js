@@ -625,7 +625,11 @@ settingsBox.addEventListener('click', e => {
     const text = kind.items()[i];
     kind.remove(i);
     listChanged(box);
-    toast(`Removed “${text}”`, 6000, null, () => { if (kind.add(text, i)) listChanged(box); });
+    toast(`Removed “${text}”`, 6000, null, () => {
+      if (!kind.add(text, i)) return;
+      listChanged(box);
+      rowButton(box, i, 'remove')?.focus(); // so keyboard and switch users keep their place
+    });
     // Focus stays in the list: the next row's Remove, else the one before, else the add box.
     (rowButton(box, i, 'remove') ?? rowButton(box, i - 1, 'remove') ?? box.querySelector('label input')).focus();
   } else if (name === 'up' || name === 'down') {

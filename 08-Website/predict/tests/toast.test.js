@@ -14,7 +14,8 @@ async function withToast(fn) {
   const frame = () => new Promise(done => setTimeout(done, 40));
   // close() queues its 'close' event on a task a hidden tab can starve, so it is also sent by hand; the real one then finds nothing to do.
   const close = async d => { d.close(); d.dispatchEvent(new Event('close')); await frame(); };
-  try { await fn({ box, dialog, toast: createToastBox(box), frame, close }); } finally { dialog.close(); box.remove(); dialog.remove(); window.requestAnimationFrame = raf; window.cancelAnimationFrame = caf; }
+  const toast = createToastBox(box);
+  try { await fn({ box, dialog, toast, frame, close }); } finally { toast.hide(); dialog.close(); box.remove(); dialog.remove(); window.requestAnimationFrame = raf; window.cancelAnimationFrame = caf; }
 }
 
 test('a toast shown inside an open modal dialog is still on the page after the dialog closes', () => withToast(async ({ box, dialog, toast, frame, close }) => {
