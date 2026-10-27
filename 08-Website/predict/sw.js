@@ -4,7 +4,7 @@ const CACHE = 'predict-v5';
 const SHELL = [
   './', 'styles.css', 'manifest.webmanifest',
   'js/app.js', 'js/backup.js', 'js/memory.js', 'js/mixer.js', 'js/pager.js', 'js/panels.js', 'js/settings.js', 'js/speech.js',
-  'js/spelling.js', 'js/storage.js', 'js/text.js', 'js/wordlist.js', 'js/vendor/double-metaphone.js',
+  'js/spelling.js', 'js/storage.js', 'js/text.js', 'js/toast.js', 'js/wordlist.js', 'js/vendor/double-metaphone.js',
   'data/words.txt',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
