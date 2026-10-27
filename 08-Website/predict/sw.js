@@ -1,5 +1,5 @@
 // Bump CACHE on every release so phones drop the old files.
-const CACHE = 'predict-v4';
+const CACHE = 'predict-v5';
 // No 'index.html': the host redirects it to './', and a redirect can't be cached for a page load.
 const SHELL = [
   './', 'styles.css', 'manifest.webmanifest',
@@ -18,10 +18,13 @@ self.addEventListener('activate', e => e.waitUntil((async () => {
   const keep = await caches.open(CACHE);
   for (const key of await caches.keys()) {
     if (key === CACHE) continue;
-    const old = await caches.open(key);
-    for (const request of await old.keys()) {
-      if (FONT_HOSTS.includes(new URL(request.url).hostname)) await keep.put(request, await old.match(request));
-    }
+    // A failed copy (quota on opaque responses, a missing match) must never stop the old caches going or clients.claim().
+    try {
+      const old = await caches.open(key);
+      for (const request of await old.keys()) {
+        if (FONT_HOSTS.includes(new URL(request.url).hostname)) await keep.put(request, await old.match(request)).catch(() => {});
+      }
+    } catch {}
     await caches.delete(key);
   }
   await self.clients.claim();
